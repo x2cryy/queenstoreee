@@ -1,0 +1,61 @@
+.ce { container-type: inline-size; display: grid; gap: 14px; --ce-ph: 74vh; }
+.ce-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.ce-title { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.ce-h { margin: 0; font-size: 1.35rem; }
+.ce-state { font-size: .85rem; padding: 3px 10px; border-radius: 999px; border: 1px solid color-mix(in srgb, currentColor 22%, transparent); }
+.ce-state[data-dirty="1"] { border-color: color-mix(in srgb, #d97706 70%, currentColor); color: color-mix(in srgb, #d97706 75%, currentColor); font-weight: 600; }
+.ce-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ce-msg { min-height: 1.4em; font-size: .92rem; }
+.ce-msg[data-kind="error"] { color: color-mix(in srgb, #dc2626 80%, currentColor); font-weight: 600; }
+.ce-msg[data-kind="ok"] { color: color-mix(in srgb, #16a34a 75%, currentColor); font-weight: 600; }
+.ce-tabs { display: none; gap: 8px; }
+.ce-grid { display: grid; grid-template-columns: minmax(330px, 400px) minmax(0, 1fr); gap: 16px; align-items: start; }
+.ce-edit { display: grid; gap: 12px; min-width: 0; }
+.ce-preview { position: sticky; top: 8px; min-width: 0; display: grid; gap: 8px; }
+.ce [aria-pressed="true"] { outline: 2px solid currentColor; outline-offset: 1px; font-weight: 700; }
+.ce .ds-input { width: 100%; min-width: 0; }
+.ce .ce-sm { min-height: 40px; min-width: 40px; padding-inline: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+
+.ce-group { border: 1px solid color-mix(in srgb, currentColor 16%, transparent); border-radius: 12px; background: color-mix(in srgb, currentColor 3%, transparent); }
+.ce-group > summary { cursor: pointer; padding: 12px 14px; font-weight: 700; list-style: none; display: flex; align-items: center; justify-content: space-between; min-height: 48px; }
+.ce-group > summary::-webkit-details-marker { display: none; }
+.ce-group > summary::after { content: "+"; font-size: 1.2rem; }
+.ce-group[open] > summary::after { content: "\2212"; }
+.ce-body { padding: 4px 14px 14px; display: grid; gap: 10px; }
+.ce-group[open] > .ce-body { animation: ce-in .18s ease-out; }
+@keyframes ce-in { from { opacity: 0; transform: translateY(-4px); } }
+
+.ce-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ce-item { border: 1px solid color-mix(in srgb, currentColor 16%, transparent); border-radius: 10px; padding: 8px; display: grid; gap: 8px; }
+.ce-item[data-off="1"] { opacity: .75; }
+.ce-row { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 10px; align-items: center; }
+.ce-thumb { width: 76px; height: 44px; border-radius: 6px; overflow: hidden; background: color-mix(in srgb, currentColor 8%, transparent); display: grid; place-items: center; font-size: .7rem; text-align: center; }
+.ce-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.ce-info { min-width: 0; display: grid; gap: 2px; }
+.ce-info strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ce-info small { opacity: .75; }
+.ce-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.ce-row .ce-btns { grid-column: 1 / -1; }
+.ce-form { display: grid; gap: 10px; border-top: 1px dashed color-mix(in srgb, currentColor 25%, transparent); padding-top: 10px; }
+.ce-check { display: flex; gap: 8px; align-items: center; min-height: 40px; }
+.ce-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ce-warn { color: color-mix(in srgb, #d97706 80%, currentColor); font-size: .85rem; margin: 0; }
+.ce-hint { font-size: .8rem; opacity: .75; margin: 0; }
+.ce-ltr { direction: ltr; text-align: left; }
+.ce-srow { display: grid; gap: 8px; padding: 10px; border: 1px solid color-mix(in srgb, currentColor 16%, transparent); border-radius: 10px; }
+.ce-srow-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+.ce-psizes { display: flex; flex-wrap: wrap; gap: 6px; }
+.ce-pwrap { position: relative; overflow: hidden; height: var(--ce-ph); border-radius: 12px; border: 1px solid color-mix(in srgb, currentColor 18%, transparent); background: color-mix(in srgb, currentColor 6%, transparent); }
+.ce-frame { position: absolute; top: 0; left: 50%; border: 0; background: #fff; transform-origin: top center; }
+
+@container (max-width: 820px) {
+  .ce-tabs { display: flex; }
+  .ce-grid { grid-template-columns: minmax(0, 1fr); }
+  .ce[data-pane="edit"] .ce-preview { display: none; }
+  .ce[data-pane="preview"] .ce-edit { display: none; }
+  .ce-preview { position: static; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ce * { transition: none !important; animation: none !important; }
+}

@@ -1,0 +1,95 @@
+"use server";
+
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { requireAnyPermission } from "../../../lib/admin/access";
+import { createClient } from "../../../lib/supabase/server";
+
+export type FormState = { error?: string };
+
+const num = (v: FormDataEntryValue | null) => {
+  const s = String(v ?? "").replace(/,/g, "").trim();
+  if (s === "") return NaN;
+  const n = Number(s);
+  return Number.isFinite(n) ? Math.round(n) : NaN;
+};
+const txt = (v: FormDataEntryValue | null) => {
+  const s = String(v ?? "").trim();
+  return s === "" ? null : s;
+};
+
+export async function saveProduct(_prev: FormState, fd: FormData): Promise<FormState> {
+  await requireAnyPermission(["products"]);
+
+  const id = txt(fd.get("id"));
+  const name = txt(fd.get("name"));
+  const price = num(fd.get("price"));
+  const quantity = num(fd.get("quantity"));
+  const threshold = num(fd.get("low_stock_threshold"));
+  const status = String(fd.get("status") ?? "hidden");
+  const costRaw = txt(fd.get("cost_price"));
+  const cost = costRaw === null ? null : num(costRaw);
+
+  if (!name) return { error: "اسم المنتج مطلوب." };
+  if (!(price >= 0)) return { error: "السعر غير صحيح." };
+  if (!(quantity >= 0)) return { error: "الكمية غير صحيحة." };
+  if (!(threshold >= 0)) return { error: "حد التنبيه غير صحيح." };
+  if (status !== "active" && status !== "hidden") return { error: "حالة غير صحيحة." };
+  if (cost !== null && !(cost >= 0)) return { error: "سعر التكلفة غير صحيح." };
+
+  const row = {
+    name,
+    category_id: txt(fd.get("category_id")),
+    brand: txt(fd.get("brand")),
+    description: txt(fd.get("description")),
+    barcode: txt(fd.get("barcode")),
+    price,
+    low_stock_threshold: threshold,
+    status,
+    is_featured: fd.get("is_featured") === "on",
+    is_new: fd.get("is_new") === "on",
+    updated_at: new Date().toISOString(),
+  };
+
+  const sb = await createClient();
+  let productId = id;
+
+  const dup = (c?: string) => (c === "23505" ? "الباركود مستخدم لمنتج آخر." : null);
+  const QTY_ERR = "حُفظت البيانات لكن تعذّر تسجيل تغيير الكمية (يحتاج صلاحية المخزون).";
+
+  if (id) {
+    const { data: old } = await sb.from("products").select("quantity").eq("id", id).maybeSingle();
+    if (!old) return { error: "المنتج غير موجود." };
+    const { error } = await sb.from("products").update(row).eq("id", id);
+    if (error) return { error: dup(error.code) ?? "تعذّر حفظ التعديلات." };
+    const diff = quantity - old.quantity;
+    if (diff !== 0) {
+      const m = await sb.from("inventory_movements").insert({
+        product_id: id, change: diff, movement_type: "manual_adjustment",
+        reason: "تعديل الكمية من صفحة المنتج",
+      });
+      if (m.error) return { error: QTY_ERR };
+    }
+  } else {
+    const slug = `p-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+    const { data, error } = await sb.from("products").insert({ ...row, quantity: 0, slug }).select("id").single();
+    if (error || !data) return { error: dup(error?.code) ?? "تعذّر إضافة المنتج." };
+    productId = data.id;
+    if (quantity > 0) {
+      const m = await sb.from("inventory_movements").insert({
+        product_id: data.id, change: quantity, movement_type: "stock_in", reason: "رصيد افتتاحي",
+      });
+      if (m.error) return { error: QTY_ERR };
+    }
+  }
+
+  if (cost !== null && productId) {
+    const { error } = await sb
+      .from("product_costs")
+      .upsert({ product_id: productId, cost_price: cost, updated_at: new Date().toISOString() });
+    if (error) return { error: "حُفظ المنتج لكن تعذّر حفظ سعر التكلفة (تحقق من الصلاحية)." };
+  }
+
+  revalidatePath("/admin/products");
+  redirect("/admin/products");
+}

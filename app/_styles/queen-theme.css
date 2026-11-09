@@ -1,0 +1,18 @@
+html[data-theme="dark"]{
+  --c-surface:#1b1813;--c-text:#f3eee3;--c-line-soft:#2c271f;--c-line:#332d24;
+  --c-line-strong:#4a4336;--c-bg-soft:#211d17;--c-bg-soft2:#26221b;
+  --c-muted2:#9a927f;--c-muted:#b3ab98;--c-text2:#d8d1c1;--c-text-hover:#e6dfce;
+  --c-bad:#f87171;--c-bad-bg:#3a1a1a;--c-warn:#fbbf24;--c-warn-bg:#3a2c12;
+  --c-good:#4ade80;--c-good-bg:#12301e;--c-info:#60a5fa;--c-info-bg:#14233f;
+  --c-gold-dark:#d4b883;color-scheme:dark;
+}
+html[data-theme="dark"] body{background:#12100c}
+html[data-theme="dark"] .qs-shell{--qs-cream:#1b1813;--qs-line:#332d24;--qs-brown:#b3ab98;color:#f3eee3}
+html[data-theme="dark"] .ds-input,
+html[data-theme="dark"] .ds-select,
+html[data-theme="dark"] .ds-textarea{background:#211d17;color:#f3eee3;border-color:#4a4336}
+
+/* إصلاح القائمة الجانبية في الوضع الداكن */
+html[data-theme="dark"] .qs-side{background:#0c0b08;color:#f3eee3;border-inline-end:1px solid #332d24}
+html[data-theme="dark"] .qs-nav-link:hover{color:#f3eee3}
+html[data-theme="dark"] .qs-avatar{color:#17140f}

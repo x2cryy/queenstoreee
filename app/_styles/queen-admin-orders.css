@@ -1,0 +1,48 @@
+.ao-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.ao-tab{display:inline-flex;gap:6px;align-items:center;padding:8px 14px;border:1px solid var(--q-line,#e4dfe9);border-radius:999px;background:var(--q-surface,#fff);color:var(--q-ink,#2a1f33);text-decoration:none;font-size:.9rem}
+.ao-tab.on{background:var(--q-brand,#4b2f5e);border-color:var(--q-brand,#4b2f5e);color:#fff}
+.ao-filter{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));align-items:end;background:var(--q-surface,#fff);border:1px solid var(--q-line,#e4dfe9);border-radius:12px;padding:14px}
+.ao-f{display:grid;gap:4px;font-size:.85rem;min-width:0}
+.ao-in{width:100%;min-height:42px;padding:8px 10px;border:1px solid var(--q-line,#e4dfe9);border-radius:8px;background:#fff;color:inherit;font:inherit;font-size:16px}
+textarea.ao-in{min-height:76px;resize:vertical}
+.ao-btn{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 16px;border-radius:8px;border:1px solid var(--q-brand,#4b2f5e);background:var(--q-brand,#4b2f5e);color:#fff;font:inherit;font-weight:600;cursor:pointer;text-decoration:none}
+.ao-btn:hover{background:var(--q-brand-hover,#3d254d)}
+.ao-btn:disabled{opacity:.6;cursor:not-allowed}
+.ao-btn-line{background:transparent;color:var(--q-brand,#4b2f5e)}
+.ao-btn-line:hover{background:rgba(75,47,94,.08)}
+.ao-list{list-style:none;margin:16px 0;padding:0;display:grid;gap:10px}
+.ao-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) auto auto;gap:12px;align-items:center;padding:12px 14px;background:var(--q-surface,#fff);border:1px solid var(--q-line,#e4dfe9);border-radius:12px;color:inherit;text-decoration:none}
+.ao-row:hover{border-color:var(--q-gold,#b9936c)}
+.ao-row>*{min-width:0;overflow-wrap:anywhere}
+@media(max-width:760px){.ao-row{grid-template-columns:1fr 1fr}}
+.ao-muted{color:var(--q-muted,#6d6476);font-size:.85rem;margin:0}
+.ao-badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.8rem;font-weight:600;background:#f0ecf4;color:var(--q-brand,#4b2f5e);white-space:nowrap}
+.ao-st-delivered,.ao-pay-paid{background:var(--q-ok-bg,#ecf5ee);color:var(--q-ok,#2c6a41)}
+.ao-st-cancelled,.ao-st-returned,.ao-pay-failed{background:var(--q-danger-bg,#fbeded);color:var(--q-danger,#9f2a2a)}
+.ao-pay-unpaid,.ao-pay-partial{background:#fff4df;color:#8a5a00}
+.ao-pager{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0 24px}
+.ao-grid{display:grid;gap:16px;margin-top:14px}
+.ao-grid>*{min-width:0}
+@media(min-width:1000px){.ao-grid{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}}
+.ao-col{display:grid;gap:16px;align-content:start}
+.ao-card{background:var(--q-surface,#fff);border:1px solid var(--q-line,#e4dfe9);border-radius:12px;padding:16px}
+.ao-card h2{margin:0 0 12px;font-size:1.02rem}
+.ao-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.ao-kv{display:grid;gap:8px;margin:0}
+.ao-kv>div{display:flex;justify-content:space-between;gap:12px}
+.ao-kv dt{color:var(--q-muted,#6d6476)}
+.ao-kv dd{margin:0;font-weight:600;text-align:end;overflow-wrap:anywhere}
+.ao-items{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:10px}
+.ao-it{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:10px;align-items:center}
+.ao-it-img{width:48px;height:48px;border-radius:8px;overflow:hidden;background:var(--q-bg,#f5f3f6);border:1px solid var(--q-line,#e4dfe9)}
+.ao-it-img img{width:100%;height:100%;object-fit:cover;display:block}
+.ao-sum{display:flex;justify-content:space-between;gap:10px;padding:5px 0}
+.ao-sum.tot{border-top:1px solid var(--q-line,#e4dfe9);margin-top:6px;padding-top:10px;font-weight:700}
+.ao-form{display:grid;gap:10px}
+.ao-err{color:var(--q-danger,#9f2a2a);font-size:.88rem;margin:0}
+.ao-ok{color:var(--q-ok,#2c6a41);font-size:.88rem;margin:0}
+.ao-log{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.ao-log li{border-bottom:1px solid var(--q-line,#e4dfe9);padding-bottom:8px;font-size:.9rem;overflow-wrap:anywhere}
+.ao-log li:last-child{border-bottom:0;padding-bottom:0}
+.ao-actions{display:flex;flex-wrap:wrap;gap:8px}
+.ao-check{display:flex;gap:8px;align-items:center;font-size:.9rem}

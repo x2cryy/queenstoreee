@@ -1,0 +1,28 @@
+.overlay{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);animation:fade .15s ease-out}
+.panel{position:fixed;top:0;bottom:0;left:0;z-index:61;width:min(560px,100vw);display:flex;flex-direction:column;background:var(--c-bg-soft,#faf8f3);color:var(--c-text,#17140f);border-inline-end:1px solid var(--c-line,#ece6da);animation:slide .2s ease-out}
+.head{display:flex;align-items:flex-start;gap:10px;padding:14px;border-bottom:1px solid var(--c-line,#ece6da);background:var(--c-surface,#fff)}
+.title{flex:1;min-width:0}
+.title h2{margin:0;font-size:18px;font-weight:700;overflow-wrap:anywhere}
+.sub{font-size:13px;color:var(--c-muted,#6b6458);overflow-wrap:anywhere}
+.body{flex:1;overflow-y:auto;padding:14px;display:grid;gap:14px;align-content:start;min-width:0}
+.body>*{min-width:0}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.sec{border:1px solid var(--c-line,#ece6da);border-radius:12px;background:var(--c-surface,#fff);padding:12px;display:grid;gap:8px}
+.sec h3{margin:0;font-size:15px;font-weight:700}
+.row{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--c-line-soft,#f1ece2);font-size:14px}
+.row:last-child{border-bottom:0}
+.row span:first-child{color:var(--c-muted,#6b6458)}
+.row span:last-child{font-weight:600;text-align:end;overflow-wrap:anywhere;min-width:0}
+.main{width:100%;aspect-ratio:4/3;border-radius:10px;background:var(--c-bg-soft,#faf8f3);display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--c-muted,#6b6458)}
+.main img,.thumbs img{width:100%;height:100%;object-fit:cover;display:block}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
+.thumbs div{aspect-ratio:1/1;border-radius:8px;overflow:hidden;background:var(--c-bg-soft,#faf8f3)}
+.note{font-size:13px;color:var(--c-muted,#6b6458);overflow-wrap:anywhere}
+.badges{display:flex;flex-wrap:wrap;gap:6px}
+.hist{display:grid;gap:8px}
+.hist div{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding-bottom:6px;border-bottom:1px solid var(--c-line-soft,#f1ece2)}
+.hist div>span:first-child{min-width:0;overflow-wrap:anywhere}
+.off{opacity:.5}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes slide{from{transform:translateX(-24px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.panel,.overlay{animation:none}}

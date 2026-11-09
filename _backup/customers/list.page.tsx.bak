@@ -1,0 +1,102 @@
+import Link from "next/link";
+import { requireAnyPermission } from "../../../lib/admin/access";
+import { createClient } from "../../../lib/supabase/server";
+import { fmtIQD, fmtNum, fmtDate } from "../../../lib/admin/fmt";
+import { PageHead, KpiGrid, Panel, Empty } from "../_components/ui";
+
+type C = { id: string; full_name: string | null; phone: string | null; area: string | null; created_at: string };
+type O = { customer_id: string | null; total: number; status: string };
+
+const live = (s: string) => !s.toLowerCase().includes("cancel");
+
+export default async function Page({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  await requireAnyPermission(["customers"]);
+  const sp = await searchParams;
+  const q = (sp.q ?? "").replace(/[%,()]/g, "").trim();
+  const sb = await createClient();
+  const since = new Date(Date.now() - 30 * 86400000).toISOString();
+
+  let cq = sb.from("customers").select("id,full_name,phone,area,created_at").order("created_at", { ascending: false }).limit(200);
+  if (q) cq = cq.or(`full_name.ilike.%${q}%,phone.ilike.%${q}%`);
+
+  const [list, totalR, newR, ordR] = await Promise.all([
+    cq,
+    sb.from("customers").select("id", { count: "exact", head: true }),
+    sb.from("customers").select("id", { count: "exact", head: true }).gte("created_at", since),
+    sb.from("orders").select("customer_id,total,status").not("customer_id", "is", null).range(0, 9999),
+  ]);
+
+  if (list.error || ordR.error) {
+    return (
+      <section>
+        <PageHead title="الزبائن" />
+        <Panel><Empty>تعذّر تحميل الزبائن. حدّث الصفحة وحاول مجدداً.</Empty></Panel>
+      </section>
+    );
+  }
+
+  const customers = (list.data ?? []) as C[];
+  const agg = new Map<string, { n: number; sum: number }>();
+  for (const o of (ordR.data ?? []) as O[]) {
+    if (!o.customer_id || !live(o.status)) continue;
+    const a = agg.get(o.customer_id) ?? { n: 0, sum: 0 };
+    a.n += 1;
+    a.sum += Number(o.total ?? 0);
+    agg.set(o.customer_id, a);
+  }
+  const buyers = agg.size;
+  let topId: string | null = null;
+  let topSum = 0;
+  for (const [id, a] of agg) if (a.sum > topSum) { topSum = a.sum; topId = id; }
+  let topName = "-";
+  if (topId) {
+    const t = await sb.from("customers").select("full_name").eq("id", topId).maybeSingle();
+    topName = t.data?.full_name ?? "-";
+  }
+
+  return (
+    <section>
+      <PageHead title="الزبائن" desc="قاعدة الزبائن ومشترياتهم." />
+      <KpiGrid
+        items={[
+          { label: "إجمالي الزبائن", value: fmtNum(totalR.count ?? 0) },
+          { label: "جدد خلال 30 يوماً", value: fmtNum(newR.count ?? 0), tone: (newR.count ?? 0) > 0 ? "good" : undefined },
+          { label: "زبائن اشتروا", value: fmtNum(buyers), hint: "لديهم طلب غير ملغى" },
+          { label: "أعلى زبون شراءً", value: topName, hint: topId ? fmtIQD(topSum) : undefined },
+        ]}
+      />
+      <Panel title="قائمة الزبائن">
+        <form method="get" className="ds-filters">
+          <input className="ds-input" style={{ flex: "1 1 220px" }} name="q" defaultValue={sp.q ?? ""} placeholder="بحث بالاسم أو رقم الهاتف" />
+          <button className="ds-btn ds-btn-gold" type="submit">بحث</button>
+        </form>
+        {customers.length === 0 ? (
+          <Empty>{q ? "لا توجد نتائج مطابقة." : "لا يوجد زبائن بعد. يظهر الزبون هنا عند تسجيله أو إنشاء طلب له."}</Empty>
+        ) : (
+          <table className="ds-table">
+            <thead>
+              <tr><th>الزبون</th><th>الهاتف</th><th>المنطقة</th><th>الطلبات</th><th>المشتريات</th><th>التسجيل</th><th></th></tr>
+            </thead>
+            <tbody>
+              {customers.map((c) => {
+                const a = agg.get(c.id);
+                return (
+                  <tr key={c.id}>
+                    <td data-label="الزبون"><strong>{c.full_name ?? "بدون اسم"}</strong></td>
+                    <td data-label="الهاتف"><span dir="ltr">{c.phone ?? "-"}</span></td>
+                    <td data-label="المنطقة">{c.area ?? "-"}</td>
+                    <td data-label="الطلبات">{fmtNum(a?.n ?? 0)}</td>
+                    <td data-label="المشتريات">{fmtIQD(a?.sum ?? 0)}</td>
+                    <td data-label="التسجيل">{fmtDate(c.created_at)}</td>
+                    <td><Link className="ds-btn" href={`/admin/customers/${c.id}`}>عرض</Link></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+        {customers.length === 200 ? <p className="ds-desc">يعرض أحدث 200 زبون. استخدم البحث لتضييق النتائج.</p> : null}
+      </Panel>
+    </section>
+  );
+}

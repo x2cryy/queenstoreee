@@ -1,0 +1,94 @@
+"use client";
+
+import { useActionState } from "react";
+import Link from "next/link";
+import { saveProduct, type FormState } from "../actions";
+
+export type ProductInit = {
+  id: string; name: string; category_id: string | null; brand: string | null;
+  description: string | null; barcode: string | null; price: number; quantity: number;
+  low_stock_threshold: number; status: string; is_featured: boolean; is_new: boolean;
+};
+
+export function ProductForm({
+  categories, product, cost,
+}: {
+  categories: { id: string; name: string }[];
+  product?: ProductInit;
+  cost?: number | null;
+}) {
+  const [state, action, pending] = useActionState<FormState, FormData>(saveProduct, {});
+  const p = product;
+  return (
+    <form action={action}>
+      {p ? <input type="hidden" name="id" value={p.id} /> : null}
+      <div className="ds-form">
+        <div>
+          <label className="ds-label" htmlFor="name">اسم المنتج</label>
+          <input className="ds-input" id="name" name="name" defaultValue={p?.name ?? ""} required />
+        </div>
+        <div>
+          <label className="ds-label" htmlFor="category_id">التصنيف</label>
+          <select className="ds-select" id="category_id" name="category_id" defaultValue={p?.category_id ?? ""}>
+            <option value="">بدون تصنيف</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="ds-label" htmlFor="brand">العلامة التجارية</label>
+          <input className="ds-input" id="brand" name="brand" defaultValue={p?.brand ?? ""} />
+        </div>
+        <div>
+          <label className="ds-label" htmlFor="barcode">الباركود</label>
+          <input className="ds-input" id="barcode" name="barcode" defaultValue={p?.barcode ?? ""} />
+        </div>
+        <div>
+          <label className="ds-label" htmlFor="price">السعر (د.ع)</label>
+          <input className="ds-input" id="price" name="price" type="number" min={0} inputMode="numeric" defaultValue={p?.price ?? 0} required />
+        </div>
+        <div>
+          <label className="ds-label" htmlFor="cost_price">سعر التكلفة (د.ع)</label>
+          <input className="ds-input" id="cost_price" name="cost_price" type="number" min={0} inputMode="numeric" defaultValue={cost ?? ""} />
+        </div>
+        <div>
+          <label className="ds-label" htmlFor="quantity">الكمية</label>
+          <input className="ds-input" id="quantity" name="quantity" type="number" min={0} inputMode="numeric" defaultValue={p?.quantity ?? 0} required />
+        </div>
+        <div>
+          <label className="ds-label" htmlFor="low_stock_threshold">حد تنبيه المخزون</label>
+          <input className="ds-input" id="low_stock_threshold" name="low_stock_threshold" type="number" min={0} inputMode="numeric" defaultValue={p?.low_stock_threshold ?? 5} required />
+        </div>
+        <div>
+          <label className="ds-label" htmlFor="status">الحالة</label>
+          <select className="ds-select" id="status" name="status" defaultValue={p?.status === "active" ? "active" : "hidden"}>
+            <option value="active">نشط (ظاهر في المتجر)</option>
+            <option value="hidden">مخفي</option>
+          </select>
+        </div>
+      </div>
+      <div style={{ marginTop: 14 }}>
+        <label className="ds-label" htmlFor="description">الوصف</label>
+        <textarea className="ds-input" style={{ height: 110, padding: 12 }} id="description" name="description" defaultValue={p?.description ?? ""} />
+      </div>
+      <div style={{ display: "flex", gap: 20, flexWrap: "wrap", marginTop: 14 }}>
+        <label style={{ display: "flex", gap: 8, alignItems: "center", color: "var(--c-text, #17140F)" }}>
+          <input type="checkbox" name="is_featured" defaultChecked={p?.is_featured} /> منتج مميز
+        </label>
+        <label style={{ display: "flex", gap: 8, alignItems: "center", color: "var(--c-text, #17140F)" }}>
+          <input type="checkbox" name="is_new" defaultChecked={p?.is_new} /> وصل حديثاً
+        </label>
+      </div>
+      {state.error ? (
+        <p role="alert" style={{ color: "#B91C1C", marginTop: 14, fontWeight: 600 }}>{state.error}</p>
+      ) : null}
+      <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
+        <button className="ds-btn ds-btn-gold" type="submit" disabled={pending}>
+          {pending ? "جارٍ الحفظ..." : p ? "حفظ التعديلات" : "إضافة المنتج"}
+        </button>
+        <Link className="ds-btn" href="/admin/products">إلغاء</Link>
+      </div>
+    </form>
+  );
+}

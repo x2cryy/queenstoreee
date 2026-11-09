@@ -1,0 +1,125 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { requireAnyPermission } from "../../../../lib/admin/access";
+import { createClient } from "../../../../lib/supabase/server";
+import { fmtIQD, fmtNum, fmtDate } from "../../../../lib/admin/fmt";
+import { PageHead, KpiGrid, Panel, Badge, Empty } from "../../_components/ui";
+
+type O = { id: string; total: number; status: string; payment_status: string | null; created_at: string };
+type D = { id: string; direction: string | null; reason: string | null; original_amount: number; paid_amount: number; remaining_amount: number; due_date: string | null; status: string | null };
+type I = { id: string; title: string | null; total_amount: number; paid_amount: number; remaining_amount: number; status: string | null; start_date: string | null };
+const live = (s: string) => !s.toLowerCase().includes("cancel");
+
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  await requireAnyPermission(["customers"]);
+  const { id } = await params;
+  const sb = await createClient();
+  const [cr, or, dr, ir] = await Promise.all([
+    sb.from("customers").select("id,full_name,phone,area,address,created_at").eq("id", id).maybeSingle(),
+    sb.from("orders").select("id,total,status,payment_status,created_at").eq("customer_id", id).order("created_at", { ascending: false }).limit(100),
+    sb.from("store_debts").select("id,direction,reason,original_amount,paid_amount,remaining_amount,due_date,status").eq("customer_id", id).order("created_at", { ascending: false }).limit(100),
+    sb.from("installments").select("id,title,total_amount,paid_amount,remaining_amount,status,start_date").eq("customer_id", id).order("created_at", { ascending: false }).limit(100),
+  ]);
+  if (cr.error || !cr.data) notFound();
+  const c = cr.data;
+  const orders = (or.data ?? []) as O[];
+  const debts = (dr.data ?? []) as D[];
+  const insts = (ir.data ?? []) as I[];
+  const debtLeft = debts.reduce((x, d) => x + Number(d.remaining_amount ?? 0), 0);
+  const instLeft = insts.reduce((x, i) => x + Number(i.remaining_amount ?? 0), 0);
+  const valid = orders.filter((o) => live(o.status));
+  const spent = valid.reduce((a, o) => a + Number(o.total ?? 0), 0);
+  const avg = valid.length ? Math.round(spent / valid.length) : 0;
+
+  return (
+    <section>
+      <PageHead
+        title={c.full_name ?? "زبون بدون اسم"}
+        desc={`مسجّل منذ ${fmtDate(c.created_at)}`}
+        actions={<Link className="ds-btn" href="/admin/customers">رجوع للزبائن</Link>}
+      />
+      <KpiGrid
+        items={[
+          { label: "عدد الطلبات", value: fmtNum(valid.length), hint: "غير الملغاة" },
+          { label: "إجمالي المشتريات", value: fmtIQD(spent) },
+          { label: "متوسط الطلب", value: fmtIQD(avg) },
+          { label: "آخر طلب", value: valid[0] ? fmtDate(valid[0].created_at) : "-" },
+        { label: "متبقي الديون", value: fmtIQD(debtLeft), hint: fmtNum(debts.length) + " سجل" },
+        { label: "متبقي الأقساط", value: fmtIQD(instLeft), hint: fmtNum(insts.length) + " قسط" },
+        ]}
+      />
+      <div className="ds-split">
+        <Panel title="بيانات الزبون">
+          <div style={{ display: "grid", gap: 10, color: "var(--c-text, #17140F)" }}>
+            <div><span className="ds-kpi-label">الهاتف: </span><span dir="ltr">{c.phone ?? "-"}</span></div>
+            <div><span className="ds-kpi-label">المنطقة: </span>{c.area ?? "-"}</div>
+            <div><span className="ds-kpi-label">العنوان: </span>{c.address ?? "-"}</div>
+          </div>
+        </Panel>
+        <Panel title="آخر الطلبات">
+          {orders.length === 0 ? (
+            <Empty>لا توجد طلبات لهذا الزبون.</Empty>
+          ) : (
+            <table className="ds-table">
+              <thead><tr><th>التاريخ</th><th>المبلغ</th><th>الحالة</th><th>الدفع</th></tr></thead>
+              <tbody>
+                {orders.slice(0, 20).map((o) => (
+                  <tr key={o.id}>
+                    <td data-label="التاريخ">{fmtDate(o.created_at)}</td>
+                    <td data-label="المبلغ">{fmtIQD(o.total)}</td>
+                    <td data-label="الحالة"><Badge>{o.status}</Badge></td>
+                    <td data-label="الدفع"><Badge>{o.payment_status ?? "-"}</Badge></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Panel>
+      </div>
+      <div className="ds-split">
+        <Panel title="ديون الزبون">
+          {debts.length === 0 ? (
+            <Empty>لا توجد ديون لهذا الزبون.</Empty>
+          ) : (
+            <table className="ds-table">
+              <thead><tr><th>السبب</th><th>الأصلي</th><th>المدفوع</th><th>المتبقي</th><th>الاستحقاق</th><th>الحالة</th></tr></thead>
+              <tbody>
+                {debts.map((d) => (
+                  <tr key={d.id}>
+                    <td data-label="السبب">{d.reason ?? "-"}</td>
+                    <td data-label="الأصلي">{fmtIQD(d.original_amount)}</td>
+                    <td data-label="المدفوع">{fmtIQD(d.paid_amount)}</td>
+                    <td data-label="المتبقي">{fmtIQD(d.remaining_amount)}</td>
+                    <td data-label="الاستحقاق">{d.due_date ? fmtDate(d.due_date) : "-"}</td>
+                    <td data-label="الحالة"><Badge>{d.status ?? "-"}</Badge></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Panel>
+        <Panel title="أقساط الزبون">
+          {insts.length === 0 ? (
+            <Empty>لا توجد أقساط لهذا الزبون.</Empty>
+          ) : (
+            <table className="ds-table">
+              <thead><tr><th>العنوان</th><th>الإجمالي</th><th>المدفوع</th><th>المتبقي</th><th>الحالة</th></tr></thead>
+              <tbody>
+                {insts.map((i) => (
+                  <tr key={i.id}>
+                    <td data-label="العنوان">{i.title ?? "-"}</td>
+                    <td data-label="الإجمالي">{fmtIQD(i.total_amount)}</td>
+                    <td data-label="المدفوع">{fmtIQD(i.paid_amount)}</td>
+                    <td data-label="المتبقي">{fmtIQD(i.remaining_amount)}</td>
+                    <td data-label="الحالة"><Badge>{i.status ?? "-"}</Badge></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Panel>
+      </div>
+
+    </section>
+  );
+}

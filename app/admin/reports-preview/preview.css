@@ -1,0 +1,185 @@
+/* تنسيق معاينة التقارير فقط. كل الكلاسات تبدأ بـ rp- ولا تؤثر على بقية الإدارة. */
+.rp-root{
+  --rp-bg:#f1f3f6; --rp-surface:#ffffff; --rp-surface-2:#e8ecf1;
+  --rp-text:#1b1f24; --rp-muted:#4d5663; --rp-line:#cfd6df; --rp-focus:#1d4fa8;
+  --rp-green:#136c34; --rp-green-bg:#e1f3e8;
+  --rp-red:#b42318; --rp-red-bg:#fde7e4;
+  --rp-amber:#8f4f00; --rp-amber-bg:#fcefd0;
+  --rp-blue:#1d4fa8; --rp-blue-bg:#e2ecfa;
+  background:var(--rp-bg); color:var(--rp-text);
+  border-radius:16px; padding:20px; min-width:0;
+}
+html[data-theme="dark"] .rp-root{
+  --rp-bg:#0e1115; --rp-surface:#171b21; --rp-surface-2:#222831;
+  --rp-text:#f0f2f5; --rp-muted:#aab3be; --rp-line:#323a45; --rp-focus:#86b8ff;
+  --rp-green:#4ade80; --rp-green-bg:#12301f;
+  --rp-red:#ff8f86; --rp-red-bg:#3d1a18;
+  --rp-amber:#fbbf24; --rp-amber-bg:#38290a;
+  --rp-blue:#86b8ff; --rp-blue-bg:#15294d;
+}
+.rp-root *,.rp-root *::before,.rp-root *::after{box-sizing:border-box}
+.rp-root h1,.rp-root h2,.rp-root p,.rp-root ul{margin:0;padding:0}
+.rp-root ul{list-style:none}
+.rp-root button{font:inherit;color:inherit;cursor:pointer}
+.rp-root :focus-visible{outline:2px solid var(--rp-focus);outline-offset:2px}
+.rp-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+.rp-body{container-type:inline-size;display:flex;flex-direction:column;gap:16px}
+.rp-stack{display:flex;flex-direction:column;gap:12px}
+
+/* شريط أدوات المعاينة */
+.rp-strip{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px dashed var(--rp-line);border-radius:12px;background:var(--rp-surface)}
+.rp-badge{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--rp-amber);background:var(--rp-amber-bg);padding:6px 10px;border-radius:999px}
+.rp-seg-wrap{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--rp-muted)}
+.rp-seg{display:inline-flex;gap:4px;padding:3px;background:var(--rp-surface-2);border-radius:10px}
+.rp-seg button{border:1px solid transparent;background:transparent;min-height:40px;padding:0 12px;border-radius:8px;font-size:13px}
+.rp-seg button[aria-pressed="true"]{background:var(--rp-surface);border-color:var(--rp-line);font-weight:800}
+
+/* رأس الصفحة */
+.rp-head{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px}
+.rp-title{font-size:26px;font-weight:800}
+.rp-desc{color:var(--rp-muted);font-size:15px;margin-top:2px}
+.rp-dates{color:var(--rp-muted);font-size:13px;margin-top:6px;line-height:1.6}
+.rp-tools{display:flex;flex-wrap:wrap;gap:8px}
+.rp-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 14px;border:1px solid var(--rp-line);border-radius:10px;background:var(--rp-surface);font-size:14px;font-weight:600;transition:background .15s,transform .1s}
+.rp-btn:hover:not(:disabled){background:var(--rp-surface-2)}
+.rp-btn:active:not(:disabled){transform:scale(.97)}
+.rp-btn:disabled{opacity:.55;cursor:not-allowed}
+.rp-btn--solid{background:var(--rp-text);color:var(--rp-bg);border-color:var(--rp-text)}
+.rp-btn--solid:hover:not(:disabled){background:var(--rp-text);opacity:.9}
+.rp-link{min-height:40px;padding:0 12px;border:1px solid var(--rp-line);border-radius:8px;background:transparent;font-size:13px;font-weight:600}
+.rp-link:hover:not(:disabled){background:var(--rp-surface-2)}
+.rp-link:disabled{opacity:.5;cursor:not-allowed}
+
+/* اختيار الفترة */
+.rp-pick{position:relative}
+.rp-pop{position:absolute;top:calc(100% + 6px);left:0;z-index:20;width:min(300px,86vw);padding:8px;background:var(--rp-surface);border:1px solid var(--rp-line);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.14)}
+@container (max-width:700px){.rp-pop{left:auto;right:0}}
+.rp-opt{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:44px;padding:0 12px;border:0;background:transparent;border-radius:10px;font-size:15px;text-align:start}
+.rp-opt:hover{background:var(--rp-surface-2)}
+.rp-opt[aria-checked="true"]{font-weight:800;background:var(--rp-surface-2)}
+.rp-field{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;font-size:14px;font-weight:600}
+.rp-input{min-height:44px;padding:0 10px;border:1px solid var(--rp-line);border-radius:10px;background:var(--rp-bg);color:var(--rp-text);font:inherit;color-scheme:light}
+html[data-theme="dark"] .rp-input{color-scheme:dark}
+.rp-err{color:var(--rp-red);font-size:13px;font-weight:700;margin-bottom:8px}
+.rp-actions{display:flex;gap:8px}
+.rp-actions .rp-btn{flex:1}
+
+/* التبويبات */
+.rp-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:4px;background:var(--rp-surface-2);border-radius:14px}
+.rp-tab{position:relative;min-height:48px;padding:6px 8px;border:0;background:transparent;border-radius:10px;font-size:15px;font-weight:600;color:var(--rp-muted);line-height:1.3}
+.rp-tab[data-active="true"]{color:var(--rp-text);font-weight:800}
+.rp-tab-ind{position:absolute;inset:0;background:var(--rp-surface);border:1px solid var(--rp-line);border-radius:10px;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.rp-tab-label{position:relative;z-index:1}
+
+/* البطاقات */
+.rp-card{background:var(--rp-surface);border:1px solid var(--rp-line);border-radius:14px;padding:16px;min-width:0}
+.rp-h2{font-size:17px;font-weight:800;margin-bottom:12px}
+.rp-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.rp-card-head .rp-h2{margin:0}
+.rp-kpis{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+@container (min-width:520px){.rp-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@container (min-width:900px){.rp-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.rp-grid2{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+@container (min-width:900px){.rp-grid2--chart{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}}
+@container (min-width:760px){.rp-grid2--pair{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.rp-kpi-top{display:flex;align-items:center;gap:8px;color:var(--rp-muted);font-size:14px;font-weight:600}
+.rp-kpi-ico{display:grid;place-items:center;width:32px;height:32px;border-radius:9px;background:var(--rp-surface-2);color:var(--rp-text)}
+.rp-kpi-val{margin-top:10px;font-size:28px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+.rp-money{display:inline-flex;align-items:baseline;gap:6px}
+.rp-unit{font-size:14px;font-weight:600;color:var(--rp-muted)}
+.rp-delta{display:inline-flex;align-items:center;gap:5px;margin-top:10px;padding:4px 9px;border-radius:999px;font-size:13px;font-weight:700}
+.rp-delta[data-tone="good"]{color:var(--rp-green);background:var(--rp-green-bg)}
+.rp-delta[data-tone="bad"]{color:var(--rp-red);background:var(--rp-red-bg)}
+.rp-delta[data-tone="neutral"]{color:var(--rp-blue);background:var(--rp-blue-bg)}
+.rp-delta[data-tone="na"]{color:var(--rp-muted);background:var(--rp-surface-2)}
+.rp-note{margin-top:8px;font-size:13px;color:var(--rp-muted);line-height:1.6}
+.rp-note[data-warn="true"]{color:var(--rp-amber);font-weight:600}
+
+/* ألوان الحالات */
+.rp-tone[data-tone="green"]{color:var(--rp-green);background:var(--rp-green-bg)}
+.rp-tone[data-tone="red"]{color:var(--rp-red);background:var(--rp-red-bg)}
+.rp-tone[data-tone="amber"]{color:var(--rp-amber);background:var(--rp-amber-bg)}
+.rp-tone[data-tone="blue"]{color:var(--rp-blue);background:var(--rp-blue-bg)}
+
+/* الرسم */
+.rp-legend{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:8px;font-size:13px;color:var(--rp-muted)}
+.rp-legend-i{display:inline-flex;align-items:center;gap:8px}
+.rp-legend-line{display:inline-block;width:26px;height:0;border-top:3px solid var(--rp-blue)}
+.rp-legend-line--sm{width:14px}
+.rp-legend-line[data-kind="coll"]{border-top:3px dashed var(--rp-green)}
+.rp-chart{position:relative;width:100%;min-height:220px}
+.rp-chart svg{display:block;width:100%;height:auto;max-width:100%;user-select:none;-webkit-user-select:none}
+.rp-line{fill:none;stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.rp-line-sales{stroke:var(--rp-blue)}
+.rp-line-coll{stroke:var(--rp-green);stroke-dasharray:7 5}
+.rp-dot-sales{fill:var(--rp-blue)}
+.rp-dot-coll{fill:var(--rp-green)}
+.rp-gridline{stroke:var(--rp-line);stroke-width:1}
+.rp-guide{stroke:var(--rp-muted);stroke-width:1;stroke-dasharray:3 3}
+.rp-axis{fill:var(--rp-muted);font-size:11px}
+.rp-tip{position:absolute;top:8px;z-index:3;min-width:170px;padding:8px 10px;background:var(--rp-surface);border:1px solid var(--rp-line);border-radius:10px;font-size:13px;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.rp-tip b{display:block;margin-bottom:4px}
+.rp-tip-row{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.rp-tip-row span:first-child{display:inline-flex;align-items:center;gap:6px}
+.rp-chart-sum{margin-top:10px;font-size:13px;color:var(--rp-muted);line-height:1.7}
+
+/* حالات فارغة وهادئة */
+.rp-empty{display:grid;place-items:center;gap:8px;text-align:center;padding:32px 12px;color:var(--rp-muted);font-size:14px;line-height:1.7}
+.rp-calm{display:flex;align-items:center;gap:10px;padding:14px;border-radius:12px;background:var(--rp-green-bg);color:var(--rp-green);font-weight:700;font-size:14px}
+
+/* قوائم */
+.rp-list{display:flex;flex-direction:column;gap:8px}
+.rp-row{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--rp-line);border-radius:12px}
+.rp-row-ico{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;flex:none}
+.rp-row-label{flex:1;font-size:14px;font-weight:600}
+.rp-count{min-width:32px;text-align:center;padding:2px 8px;border-radius:999px;font-weight:800;font-variant-numeric:tabular-nums}
+
+/* أداء الطلبات */
+.rp-status{display:grid;grid-template-columns:minmax(78px,auto) minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--rp-line)}
+.rp-status:last-child{border-bottom:0}
+.rp-status-name{font-weight:700;font-size:14px}
+.rp-status-count{font-weight:800;min-width:36px;text-align:end;font-variant-numeric:tabular-nums}
+.rp-track{height:10px;border-radius:999px;background:var(--rp-surface-2);overflow:hidden}
+.rp-fill{display:block;height:100%;border-radius:999px}
+.rp-fill[data-tone="green"]{background:var(--rp-green)}
+.rp-fill[data-tone="red"]{background:var(--rp-red)}
+.rp-fill[data-tone="amber"]{background:var(--rp-amber)}
+.rp-fill[data-tone="blue"]{background:var(--rp-blue)}
+@container (max-width:560px){
+  .rp-status{grid-template-columns:minmax(0,1fr) auto auto}
+  .rp-status-name{grid-column:1;grid-row:1}
+  .rp-status-count{grid-column:2;grid-row:1}
+  .rp-status .rp-link{grid-column:3;grid-row:1}
+  .rp-track{grid-column:1/-1;grid-row:2}
+}
+
+/* أفضل المنتجات */
+.rp-prod{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--rp-line)}
+.rp-prod:last-child{border-bottom:0}
+.rp-thumb{display:grid;place-items:center;width:44px;height:44px;border-radius:10px;background:var(--rp-surface-2);color:var(--rp-muted)}
+.rp-prod-name{font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rp-prod-sub{font-size:13px;color:var(--rp-muted)}
+.rp-prod-val{font-weight:800;font-variant-numeric:tabular-nums;text-align:end}
+
+/* اللوحة الجانبية */
+.rp-scrim{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.45)}
+.rp-drawer{position:fixed;top:0;bottom:0;left:0;z-index:71;width:min(420px,92vw);display:flex;flex-direction:column;background:var(--rp-surface);border-right:1px solid var(--rp-line)}
+.rp-drawer-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:16px;border-bottom:1px solid var(--rp-line)}
+.rp-drawer-body{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.rp-order{display:grid;gap:4px;padding:10px 12px;border:1px solid var(--rp-line);border-radius:12px;font-size:14px}
+.rp-order-top{display:flex;justify-content:space-between;gap:8px;font-weight:700}
+.rp-order-sub{display:flex;justify-content:space-between;gap:8px;color:var(--rp-muted);font-size:13px}
+
+/* التحميل */
+.rp-skel{background:var(--rp-surface-2);border-radius:10px;animation:rp-pulse 1.2s ease-in-out infinite}
+@keyframes rp-pulse{50%{opacity:.45}}
+
+@media (max-width:600px){
+  .rp-root{padding:12px}
+  .rp-title{font-size:22px}
+  .rp-kpi-val{font-size:24px}
+}
+@media (prefers-reduced-motion:reduce){
+  .rp-root *{animation:none!important;transition:none!important}
+}

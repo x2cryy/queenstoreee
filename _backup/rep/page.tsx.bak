@@ -1,0 +1,7 @@
+import { requireAnyPermission } from "../../../lib/admin/access";
+import { SectionPlaceholder } from "../_components/SectionPlaceholder";
+
+export default async function Page() {
+  await requireAnyPermission(["reports"]);
+  return <SectionPlaceholder title="التقارير" />;
+}

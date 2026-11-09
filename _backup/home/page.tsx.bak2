@@ -1,0 +1,95 @@
+import Link from "next/link";
+import { ChartColumn, Boxes, MessageCircle, Plus, Receipt } from "lucide-react";
+import { getMyPermissions, requireAnyPermission } from "../../lib/admin/access";
+import { getDashboardCards } from "../../lib/admin/dashboard";
+import { getCharts } from "../../lib/admin/charts";
+import { getRecentActivity } from "../../lib/admin/activity";
+import { ActivitySection } from "./_components/ActivityLists";
+import { StatCard } from "./_components/StatCard";
+import { SalesChart } from "./_components/SalesChart";
+import { BarList, ChartError, Panel } from "./_components/Charts";
+
+const QUICK = [
+  { href: "/admin/products", label: "إضافة منتج", perm: "products", Icon: Plus },
+  { href: "/admin/orders", label: "عرض الطلبات الجديدة", perm: "orders", Icon: Receipt },
+  { href: "/admin/chats", label: "فتح المحادثات", perm: "chats", Icon: MessageCircle },
+  { href: "/admin/inventory", label: "مراجعة المخزون", perm: "inventory", Icon: Boxes },
+  { href: "/admin/reports", label: "عرض التقارير", perm: "reports", Icon: ChartColumn },
+] as const;
+
+export default async function AdminHome() {
+  await requireAnyPermission(["dashboard"]);
+  const perms = await getMyPermissions();
+  const canOrders = perms.includes("orders");
+  const [cards, charts, activity] = await Promise.all([
+    getDashboardCards(),
+    canOrders ? getCharts() : Promise.resolve(null),
+    getRecentActivity(),
+  ]);
+  const quick = QUICK.filter((q) => perms.includes(q.perm));
+
+  return (
+    <section>
+      <div className="qs-page-head">
+        <h1 className="qs-h1">الرئيسية</h1>
+        <p className="qs-muted">أرقام فعلية من قاعدة البيانات، حسب صلاحياتك.</p>
+      </div>
+
+      {quick.length > 0 && (
+        <>
+          <h2 className="qs-section-title">إجراءات سريعة</h2>
+          <div className="qs-quick qs-quick-top" style={{display:"flex",flexWrap:"wrap",gap:10}}>
+            {quick.map(({ href, label, Icon }) => (
+              <Link key={href} href={href}>
+                <Icon size={16} /> {label}
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
+
+
+      {cards.length === 0 ? (
+        <div className="qs-empty">
+          <p className="qs-muted">لا توجد بطاقات تتوافق مع صلاحياتك الحالية.</p>
+        </div>
+      ) : (
+        <div className="qs-grid">
+          {cards.map((c) => (
+            <StatCard key={c.id} card={c} />
+          ))}
+        </div>
+      )}
+
+      {charts && (
+        <>
+          <h2 className="qs-section-title">المبيعات والطلبات</h2>
+          <div className="qs-charts">
+            <Panel title="المبيعات" wide>
+              {charts.days ? <SalesChart days={charts.days} /> : <ChartError />}
+            </Panel>
+            <Panel title="الطلبات حسب الحالة">
+              {charts.statuses ? <BarList rows={charts.statuses} empty="لا توجد طلبات بعد." /> : <ChartError />}
+            </Panel>
+            <Panel title="طرق الدفع">
+              {charts.payments ? <BarList rows={charts.payments} empty="لا توجد طلبات بعد." /> : <ChartError />}
+            </Panel>
+            <Panel title="أفضل المنتجات مبيعاً (بالكمية)">
+              {charts.top ? (
+                <BarList
+                  rows={charts.top.map((t) => ({ key: t.key, label: t.name, value: t.qty }))}
+                  empty="لا توجد مبيعات بعد."
+                />
+              ) : (
+                <ChartError />
+              )}
+            </Panel>
+          </div>
+        </>
+      )}
+
+      <ActivitySection data={activity} />
+
+    </section>
+  );
+}

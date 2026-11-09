@@ -1,0 +1,203 @@
+import Link from "next/link";
+import { requireAnyPermission } from "../../../lib/admin/access";
+import { createClient } from "../../../lib/supabase/server";
+import { formatCount, formatDateTime, formatMoney } from "../../../lib/admin/format";
+import { STATUS_GROUPS } from "../../../lib/admin/orders";
+import {
+  ORDER_STATUS_LABEL,
+  PAYMENT_STATUS_LABEL,
+  normalizePhone,
+  statusLabel,
+} from "../../../lib/shop/orders";
+
+export const dynamic = "force-dynamic";
+
+const PAGE = 20;
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+type SP = Record<string, string | string[] | undefined>;
+type Row = {
+  id: string;
+  order_number: string;
+  customer_name: string;
+  phone: string;
+  total: number;
+  status: string;
+  payment_status: string;
+  created_at: string;
+  governorate: string | null;
+};
+
+const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
+
+export default async function AdminOrdersPage({ searchParams }: { searchParams: Promise<SP> }) {
+  await requireAnyPermission(["orders"]);
+  const sp = await searchParams;
+
+  const group = STATUS_GROUPS.find((g) => g.key === one(sp.g)) ?? STATUS_GROUPS[0];
+  const exact = ORDER_STATUS_LABEL[one(sp.s)] ? one(sp.s) : "";
+  const q = one(sp.q).replace(/[%,()*\\"'`;]/g, " ").replace(/\s+/g, " ").trim().slice(0, 60);
+  const from = DATE.test(one(sp.from)) ? one(sp.from) : "";
+  const to = DATE.test(one(sp.to)) ? one(sp.to) : "";
+  const page = Math.max(1, Math.min(500, parseInt(one(sp.p), 10) || 1));
+
+  const supabase = await createClient();
+  let query = supabase
+    .from("orders")
+    .select(
+      "id, order_number, customer_name, phone, total, status, payment_status, created_at, governorate",
+      { count: "exact" }
+    )
+    .order("created_at", { ascending: false })
+    .range((page - 1) * PAGE, page * PAGE - 1);
+  if (exact) query = query.eq("status", exact);
+  else if (group.statuses) query = query.in("status", group.statuses);
+  if (q) {
+    const digits = normalizePhone(q);
+    const parts = [
+      `order_number.ilike.%${q}%`,
+      `customer_name.ilike.%${q}%`,
+      `phone.ilike.%${q}%`,
+    ];
+    if (digits !== q && /^[0-9+]+$/.test(digits)) parts.push(`phone.ilike.%${digits}%`);
+    query = query.or(parts.join(","));
+  }
+  if (from) query = query.gte("created_at", `${from}T00:00:00+03:00`);
+  if (to) query = query.lte("created_at", `${to}T23:59:59.999+03:00`);
+
+  const [res, countsRes] = await Promise.all([query, supabase.rpc("admin_order_counts")]);
+  const rows = (res.data ?? []) as unknown as Row[];
+  const total = res.count ?? 0;
+  const pages = Math.max(1, Math.ceil(total / PAGE));
+  const counts = (countsRes.data ?? {}) as Record<string, number>;
+  const sum = (list: string[] | null) =>
+    (list ?? Object.keys(counts)).reduce((n, k) => n + (Number(counts[k]) || 0), 0);
+
+  const href = (o: Partial<Record<"g" | "s" | "q" | "from" | "to" | "p", string>>) => {
+    const base: Record<string, string> = {
+      g: group.key === "all" ? "" : group.key,
+      s: exact,
+      q,
+      from,
+      to,
+      p: "",
+    };
+    const m = { ...base, ...o };
+    const p = new URLSearchParams();
+    for (const [k, v] of Object.entries(m)) if (v) p.set(k, v);
+    const s = p.toString();
+    return s ? `/admin/orders?${s}` : "/admin/orders";
+  };
+
+  return (
+    <section>
+      <h1 className="qs-h1">الطلبات</h1>
+
+      <nav className="ao-tabs" aria-label="تصنيف الطلبات">
+        {STATUS_GROUPS.map((g) => (
+          <Link
+            key={g.key}
+            href={href({ g: g.key === "all" ? "" : g.key, s: "", p: "" })}
+            className={`ao-tab${group.key === g.key && !exact ? " on" : ""}`}
+          >
+            {g.label} <small>{formatCount(sum(g.statuses))}</small>
+          </Link>
+        ))}
+      </nav>
+
+      <form method="get" action="/admin/orders" className="ao-filter">
+        {group.key !== "all" ? <input type="hidden" name="g" value={group.key} /> : null}
+        <label className="ao-f">
+          <span>بحث</span>
+          <input
+            name="q"
+            className="ao-in"
+            defaultValue={q}
+            placeholder="رقم الطلب أو الاسم أو الهاتف"
+          />
+        </label>
+        <label className="ao-f">
+          <span>الحالة</span>
+          <select name="s" className="ao-in" defaultValue={exact}>
+            <option value="">كل الحالات</option>
+            {Object.entries(ORDER_STATUS_LABEL).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="ao-f">
+          <span>من تاريخ</span>
+          <input type="date" name="from" className="ao-in" defaultValue={from} />
+        </label>
+        <label className="ao-f">
+          <span>إلى تاريخ</span>
+          <input type="date" name="to" className="ao-in" defaultValue={to} />
+        </label>
+        <div className="ao-f">
+          <button type="submit" className="ao-btn">
+            بحث
+          </button>
+        </div>
+      </form>
+
+      {res.error ? (
+        <p className="ao-err" role="alert" style={{ marginTop: 16 }}>
+          تعذر تحميل الطلبات.
+        </p>
+      ) : rows.length === 0 ? (
+        <p className="ao-muted" style={{ marginTop: 16 }}>
+          لا توجد طلبات مطابقة.
+        </p>
+      ) : (
+        <ul className="ao-list">
+          {rows.map((r) => (
+            <li key={r.id}>
+              <Link href={`/admin/orders/${r.id}`} className="ao-row">
+                <div>
+                  <strong dir="ltr">{r.order_number}</strong>
+                  <p className="ao-muted">{formatDateTime(r.created_at)}</p>
+                </div>
+                <div>
+                  <strong>{r.customer_name}</strong>
+                  <p className="ao-muted" dir="ltr">
+                    {r.phone}
+                  </p>
+                </div>
+                <div>
+                  <strong>{formatMoney(Number(r.total) || 0)}</strong>
+                  <p>
+                    <span className={`ao-badge ao-pay-${r.payment_status}`}>
+                      {PAYMENT_STATUS_LABEL[r.payment_status] ?? r.payment_status}
+                    </span>
+                  </p>
+                </div>
+                <span className={`ao-badge ao-st-${r.status}`}>{statusLabel(r.status)}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="ao-pager">
+        {page > 1 ? (
+          <Link className="ao-btn ao-btn-line" href={href({ p: String(page - 1) })}>
+            السابق
+          </Link>
+        ) : (
+          <span />
+        )}
+        <span className="ao-muted">
+          صفحة {page} من {pages} · {formatCount(total)} طلب
+        </span>
+        {page < pages ? (
+          <Link className="ao-btn ao-btn-line" href={href({ p: String(page + 1) })}>
+            التالي
+          </Link>
+        ) : (
+          <span />
+        )}
+      </div>
+    </section>
+  );
+}

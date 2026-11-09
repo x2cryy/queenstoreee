@@ -1,0 +1,44 @@
+import Link from "next/link";
+import { getMyPermissions, requireAnyPermission } from "../../../lib/admin/access";
+import { listPersonalDebts, listStoreDebts, listInstallments } from "../../../lib/finance/queries";
+import { syncAlerts } from "../../../lib/finance/service";
+import { iqd } from "../../../lib/finance/types";
+
+const sum = (a: { remaining_amount: number | string }[]) =>
+  a.reduce((t, r) => t + Number(r.remaining_amount), 0);
+
+export default async function Page() {
+  await requireAnyPermission(["store_debts", "personal_debts", "installments"]);
+  const perms = await getMyPermissions();
+  await syncAlerts();
+  const personal = perms.includes("personal_debts") ? await listPersonalDebts() : null;
+  const store = perms.includes("store_debts") ? await listStoreDebts() : null;
+  const inst = perms.includes("installments") ? await listInstallments() : null;
+  return (
+    <section>
+      <h1 className="qs-h1">الديون والأقساط</h1>
+      <p className="qs-muted">ثلاثة أقسام مستقلة، لا تُجمع أرصدتها مع بعض.</p>
+      {personal && (
+        <Link className="qa-card qa-link" href="/admin/debts/personal">
+          <b>الديون الشخصية</b>
+          <span>المتبقي عليّ: {iqd(sum(personal.rows.filter((r) => r.direction === "payable" && r.status !== "cancelled")))}</span>
+          <span>المتبقي لي: {iqd(sum(personal.rows.filter((r) => r.direction === "receivable" && r.status !== "cancelled")))}</span>
+        </Link>
+      )}
+      {store && (
+        <Link className="qa-card qa-link" href="/admin/debts/store">
+          <b>ديون المتجر</b>
+          <span>المستحق للمتجر: {iqd(sum(store.rows.filter((r) => r.status !== "cancelled")))}</span>
+        </Link>
+      )}
+      {inst && (
+        <Link className="qa-card qa-link" href="/admin/debts/installments">
+          <b>الأقساط</b>
+          <span>المتبقي على الخطط النشطة: {iqd(sum(inst.rows.filter((r) => r.status === "active")))}</span>
+        </Link>
+      )}
+      <Link className="qa-card qa-link" href="/admin/debts/receipts"><b>الوصول</b></Link>
+      <Link className="qa-card qa-link" href="/admin/debts/payments"><b>سجل الدفعات</b></Link>
+    </section>
+  );
+}

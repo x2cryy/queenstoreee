@@ -1,0 +1,27 @@
+.layout{display:grid;gap:16px;grid-template-columns:minmax(0,1fr);align-items:start}
+@media (min-width:1024px){.layout{grid-template-columns:minmax(0,1fr) 300px}}
+.main,.aside{display:grid;gap:16px;min-width:0}
+.main > :global(.ds-panel),.aside > :global(.ds-panel){margin-bottom:0}
+@media (min-width:1024px){.aside{position:sticky;top:84px}}
+.bar{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;margin-bottom:16px;background:var(--c-surface,#fff);border:1px solid var(--c-line,#ECE6DA);border-radius:14px}
+.barBtns{display:flex;gap:8px;flex-wrap:wrap;margin-inline-start:auto}
+.barMsg{flex-basis:100%;margin:0;font-weight:600;font-size:14px;overflow-wrap:anywhere}
+.fs{border:0;padding:0;margin:0;min-width:0}
+.secDesc{font-size:13px;color:var(--c-muted,#6B6458)}
+.grid2{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr))}
+.err{color:var(--c-bad,#B91C1C);font-size:13px;font-weight:600;margin:4px 0 0}
+.opt{color:var(--c-muted2,#8A8372);font-size:12px;margin-inline-start:6px;font-weight:400}
+.imgs{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));margin-top:14px}
+.img{border:1px solid var(--c-line,#ECE6DA);border-radius:12px;overflow:hidden;background:var(--c-surface,#fff)}
+.img img{width:100%;height:110px;object-fit:cover;display:block}
+.imgBody{padding:6px;display:grid;gap:6px}
+.imgBtns{display:flex;gap:6px}
+.primary{border-color:var(--c-gold-dark,#7D6335)}
+.sumImg{aspect-ratio:4/3;border-radius:10px;background:var(--c-bg-soft,#FAF8F3);display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--c-muted,#6B6458);font-size:13px}
+.sumImg img{width:100%;height:100%;object-fit:cover}
+.sumName{font-weight:700;overflow-wrap:anywhere;margin:10px 0 4px}
+.sumRow{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:6px 0;border-bottom:1px solid var(--c-line-soft,#F1ECE2)}
+.sumRow span:first-child{color:var(--c-muted,#6B6458)}
+.sumRow span:last-child{overflow-wrap:anywhere;text-align:end}
+.warns{margin:10px 0 0;padding-inline-start:18px;color:var(--c-warn,#B45309);font-size:13px;line-height:1.8}
+@media (prefers-reduced-motion:no-preference){.img{transition:border-color .15s}}

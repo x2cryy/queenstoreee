@@ -1,0 +1,56 @@
+import { IBM_Plex_Sans_Arabic } from "next/font/google";
+import { redirect } from "next/navigation";
+import { getProfile, getRole, requireUser } from "../../lib/auth/session";
+import { getMyPermissions } from "../../lib/admin/access";
+import { getAdminNotifications } from "../../lib/admin/notifications";
+import { PERMISSION_LABELS } from "../../lib/auth/permissions";
+import { AdminShell } from "./_components/AdminShell";
+import { NAV_ITEMS, canSee } from "./_components/nav";
+import "../_styles/queen-admin.css";
+import "../_styles/queen-shell.css";
+import "../_styles/queen-admin-orders.css";
+import "../_styles/queen-admin-ds.css";
+
+const plex = IBM_Plex_Sans_Arabic({
+  subsets: ["arabic", "latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  await requireUser("/admin");
+  const role = await getRole();
+  if (role === "customer") redirect("/forbidden");
+  const me = await getProfile();
+  if (me?.account_status === "blocked") redirect("/forbidden");
+
+  const isOwner = role === "owner";
+  const [perms, notifs] = await Promise.all([getMyPermissions(), getAdminNotifications()]);
+
+  const items = NAV_ITEMS.filter((i) => canSee(i, perms, isOwner)).map(
+    ({ href, label, icon, children }) => ({
+      href,
+      label,
+      icon,
+      children: children
+        ?.filter((c) => canSee(c, perms, isOwner))
+        .map(({ href, label, icon, match }) => ({ href, label, icon, match })),
+    }),
+  );
+
+  const name = me?.full_name?.trim() || (isOwner ? "المالكة" : "مدير");
+  const user = {
+    name,
+    roleLabel: isOwner ? "المالكة" : "مدير",
+    initial: name.charAt(0),
+    permissionLabels: isOwner ? ["جميع الصلاحيات"] : perms.map((k) => PERMISSION_LABELS[k]),
+  };
+
+  return (
+    <div className={`${plex.className} qa-root`} dir="rtl" lang="ar">
+      <AdminShell items={items} user={user} notifs={notifs}>
+        {children}
+      </AdminShell>
+    </div>
+  );
+}

@@ -1,0 +1,71 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { requireAnyPermission } from "../../../../lib/admin/access";
+import { createClient } from "../../../../lib/supabase/server";
+import { fmtIQD, fmtNum, fmtDate } from "../../../../lib/admin/fmt";
+import { PageHead, KpiGrid, Panel, Badge, Empty } from "../../_components/ui";
+
+type O = { id: string; total: number; status: string; payment_status: string | null; created_at: string };
+const live = (s: string) => !s.toLowerCase().includes("cancel");
+
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  await requireAnyPermission(["customers"]);
+  const { id } = await params;
+  const sb = await createClient();
+  const [cr, or] = await Promise.all([
+    sb.from("customers").select("id,full_name,phone,area,address,created_at").eq("id", id).maybeSingle(),
+    sb.from("orders").select("id,total,status,payment_status,created_at").eq("customer_id", id).order("created_at", { ascending: false }).limit(100),
+  ]);
+  if (cr.error || !cr.data) notFound();
+  const c = cr.data;
+  const orders = (or.data ?? []) as O[];
+  const valid = orders.filter((o) => live(o.status));
+  const spent = valid.reduce((a, o) => a + Number(o.total ?? 0), 0);
+  const avg = valid.length ? Math.round(spent / valid.length) : 0;
+
+  return (
+    <section>
+      <PageHead
+        title={c.full_name ?? "زبون بدون اسم"}
+        desc={`مسجّل منذ ${fmtDate(c.created_at)}`}
+        actions={<Link className="ds-btn" href="/admin/customers">رجوع للزبائن</Link>}
+      />
+      <KpiGrid
+        items={[
+          { label: "عدد الطلبات", value: fmtNum(valid.length), hint: "غير الملغاة" },
+          { label: "إجمالي المشتريات", value: fmtIQD(spent) },
+          { label: "متوسط الطلب", value: fmtIQD(avg) },
+          { label: "آخر طلب", value: valid[0] ? fmtDate(valid[0].created_at) : "-" },
+        ]}
+      />
+      <div className="ds-split">
+        <Panel title="بيانات الزبون">
+          <div style={{ display: "grid", gap: 10, color: "#17140F" }}>
+            <div><span className="ds-kpi-label">الهاتف: </span><span dir="ltr">{c.phone ?? "-"}</span></div>
+            <div><span className="ds-kpi-label">المنطقة: </span>{c.area ?? "-"}</div>
+            <div><span className="ds-kpi-label">العنوان: </span>{c.address ?? "-"}</div>
+          </div>
+        </Panel>
+        <Panel title="آخر الطلبات">
+          {orders.length === 0 ? (
+            <Empty>لا توجد طلبات لهذا الزبون.</Empty>
+          ) : (
+            <table className="ds-table">
+              <thead><tr><th>التاريخ</th><th>المبلغ</th><th>الحالة</th><th>الدفع</th></tr></thead>
+              <tbody>
+                {orders.slice(0, 20).map((o) => (
+                  <tr key={o.id}>
+                    <td data-label="التاريخ">{fmtDate(o.created_at)}</td>
+                    <td data-label="المبلغ">{fmtIQD(o.total)}</td>
+                    <td data-label="الحالة"><Badge>{o.status}</Badge></td>
+                    <td data-label="الدفع"><Badge>{o.payment_status ?? "-"}</Badge></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Panel>
+      </div>
+    </section>
+  );
+}

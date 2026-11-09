@@ -1,0 +1,104 @@
+import Link from "next/link";
+import { requireAnyPermission } from "../../../lib/admin/access";
+import { createClient } from "../../../lib/supabase/server";
+import { PageHead, KpiGrid, Panel, Empty } from "../_components/ui";
+import { DataView, RowsTable, kpisFromObject } from "./_components/Generic";
+
+type SP = { t?: string; r?: string; from?: string; to?: string };
+const TABS: [string, string][] = [
+  ["overview", "نظرة عامة"], ["sales", "المبيعات"], ["products", "المنتجات"],
+  ["customers", "الزبائن"], ["debts", "الديون"], ["inventory", "المخزون"],
+];
+const RANGES: [string, string][] = [["today", "اليوم"], ["7", "7 أيام"], ["30", "30 يوماً"]];
+const ISO = /^\d{4}-\d{2}-\d{2}$/;
+
+const addDays = (iso: string, n: number) => {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+};
+
+export default async function Page({ searchParams }: { searchParams: Promise<SP> }) {
+  await requireAnyPermission(["reports"]);
+  const sp = await searchParams;
+  const tab = TABS.some(([k]) => k === sp.t) ? (sp.t as string) : "overview";
+  const today = new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 10);
+  let r = sp.r ?? "30";
+  let from = addDays(today, -29);
+  let to = today;
+  if (r === "today") from = today;
+  else if (r === "7") from = addDays(today, -6);
+  else if (r === "custom" && sp.from && sp.to && ISO.test(sp.from) && ISO.test(sp.to) && sp.from <= sp.to) {
+    from = sp.from; to = sp.to;
+  } else r = "30";
+
+  const sb = await createClient();
+  const args = { p_from: from, p_to: to };
+  const call = async () => {
+    switch (tab) {
+      case "overview": return [await sb.rpc("rpt_overview", args)];
+      case "sales": return [await sb.rpc("rpt_sales_daily", args), await sb.rpc("rpt_breakdown", args)];
+      case "products": return [await sb.rpc("rpt_products", args)];
+      case "customers": return [await sb.rpc("rpt_customers", { ...args, p_inactive_days: 30 })];
+      case "debts": return [await sb.rpc("rpt_debts", args)];
+      default: return [await sb.rpc("rpt_inventory")];
+    }
+  };
+  const res = await call();
+  const failed = res.find((x) => x.error);
+
+  const link = (over: Partial<SP>) => {
+    const p = new URLSearchParams({ t: tab, r, ...(r === "custom" ? { from, to } : {}), ...over } as Record<string, string>);
+    return `/admin/reports?${p.toString()}`;
+  };
+  const usesRange = tab !== "inventory";
+
+  let body: React.ReactNode;
+  if (failed) {
+    body = <Panel><Empty>تعذّر تحميل التقرير. تحقق من صلاحية التقارير وحاول مجدداً.</Empty></Panel>;
+  } else if (tab === "overview") {
+    const d = (res[0].data ?? {}) as Record<string, unknown>;
+    const cur = (d.current ?? {}) as Record<string, unknown>;
+    const prev = (d.previous ?? {}) as Record<string, unknown>;
+    const items = kpisFromObject(cur, prev);
+    body = items.length ? <KpiGrid items={items} /> : <Panel><Empty>لا توجد بيانات في هذه الفترة.</Empty></Panel>;
+  } else if (tab === "sales") {
+    const daily = Array.isArray(res[0].data) ? (res[0].data as unknown[]) : [];
+    body = (
+      <>
+        <Panel title="المبيعات اليومية"><RowsTable rows={daily} /></Panel>
+        <DataView data={res[1].data} />
+      </>
+    );
+  } else {
+    body = <DataView data={res[0].data} />;
+  }
+
+  return (
+    <section>
+      <PageHead title="التقارير" desc={usesRange ? `الفترة: ${from} إلى ${to}` : "الوضع الحالي للمخزون."} />
+      <div className="ds-filters">
+        {TABS.map(([k, l]) => (
+          <Link key={k} className={k === tab ? "ds-btn ds-btn-gold" : "ds-btn"} href={link({ t: k })}>{l}</Link>
+        ))}
+      </div>
+      {usesRange ? (
+        <>
+          <div className="ds-filters">
+            {RANGES.map(([k, l]) => (
+              <Link key={k} className={k === r ? "ds-btn ds-btn-gold" : "ds-btn"} href={`/admin/reports?t=${tab}&r=${k}`}>{l}</Link>
+            ))}
+          </div>
+          <form method="get" className="ds-filters">
+            <input type="hidden" name="t" value={tab} />
+            <input type="hidden" name="r" value="custom" />
+            <input className="ds-input" style={{ flex: "1 1 150px" }} type="date" name="from" defaultValue={from} required />
+            <input className="ds-input" style={{ flex: "1 1 150px" }} type="date" name="to" defaultValue={to} required />
+            <button className="ds-btn" type="submit">عرض الفترة</button>
+          </form>
+        </>
+      ) : null}
+      {body}
+    </section>
+  );
+}

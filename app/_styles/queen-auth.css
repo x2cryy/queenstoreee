@@ -1,0 +1,111 @@
+/* QUEEN STORE — account screens.
+   Brand colors are CSS variables on .q-root: replace them with the approved palette. */
+.q-root {
+  --q-bg: #FBF7EF;
+  --q-surface: #ffffff;
+  --q-ink: #17140F;
+  --q-muted: #6B6254;
+  --q-line: #EDE4D2;
+  --q-brand: #17140F;
+  --q-brand-hover: #17140F;
+  --q-brand-ink: #ffffff;
+  --q-gold: #B89B6A;
+  --q-danger: #9f2a2a;
+  --q-danger-bg: #fbeded;
+  --q-ok: #2c6a41;
+  --q-ok-bg: #ecf5ee;
+  --q-info-bg: #F3ECDD;
+
+  box-sizing: border-box;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background: var(--q-bg);
+  color: var(--q-ink);
+  line-height: 1.7;
+}
+.q-root *, .q-root *::before, .q-root *::after { box-sizing: border-box; }
+
+.q-card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--q-surface);
+  border: 1px solid var(--q-line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.q-brandbar {
+  background: var(--q-brand);
+  color: var(--q-brand-ink);
+  padding: 20px 28px 18px;
+  border-bottom: 3px solid var(--q-gold);
+}
+.q-wordmark {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.15rem;
+  font-weight: 400;
+  letter-spacing: 0.32em;
+  direction: ltr;
+  text-align: right;
+}
+.q-body { padding: 28px 28px 30px; }
+.q-body h1 { margin: 0 0 6px; font-size: 1.45rem; line-height: 1.4; font-weight: 700; }
+.q-lead { margin: 0 0 22px; color: var(--q-muted); font-size: 0.97rem; }
+
+.q-field { margin-bottom: 16px; }
+.q-field label { display: block; margin-bottom: 6px; font-size: 0.93rem; font-weight: 600; }
+.q-field input {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  font: inherit;
+  font-size: 16px;
+  color: var(--q-ink);
+  background: #fff;
+  border: 1px solid #E6DCC8;
+  border-radius: 10px;
+}
+.q-field input:focus-visible { outline: 3px solid rgba(75, 47, 94, 0.28); outline-offset: 1px; border-color: var(--q-brand); }
+.q-field input[aria-invalid="true"] { border-color: var(--q-danger); }
+.q-field input[readonly] { background: #FAF5EA; color: var(--q-muted); }
+.q-ltr { direction: ltr; text-align: right; }
+.q-hint { margin: 6px 0 0; font-size: 0.85rem; color: var(--q-muted); }
+.q-error { margin: 6px 0 0; font-size: 0.87rem; color: var(--q-danger); }
+
+.q-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 100%; height: 48px; margin-top: 6px;
+  padding: 0 18px;
+  font: inherit; font-size: 1rem; font-weight: 700;
+  color: var(--q-brand-ink); background: var(--q-brand);
+  border: 1px solid var(--q-brand); border-radius: 10px;
+  cursor: pointer; text-decoration: none;
+}
+.q-btn:hover { background: var(--q-brand-hover); }
+.q-btn:focus-visible { outline: 3px solid rgba(185, 147, 108, 0.6); outline-offset: 2px; }
+.q-btn:disabled { opacity: 0.65; cursor: progress; }
+.q-btn--ghost { color: var(--q-brand); background: transparent; }
+.q-btn--ghost:hover { background: var(--q-info-bg); }
+
+.q-notice { margin: 0 0 18px; padding: 12px 14px; border-radius: 10px; font-size: 0.93rem; border: 1px solid transparent; }
+.q-notice--error { color: var(--q-danger); background: var(--q-danger-bg); border-color: #efcccc; }
+.q-notice--success { color: var(--q-ok); background: var(--q-ok-bg); border-color: #c9e2d0; }
+.q-notice--info { color: var(--q-ink); background: var(--q-info-bg); border-color: var(--q-line); }
+
+.q-links { margin: 18px 0 0; display: flex; flex-wrap: wrap; gap: 8px 18px; justify-content: space-between; font-size: 0.93rem; }
+.q-links a, .q-link { color: var(--q-brand); text-underline-offset: 3px; }
+.q-links a:focus-visible, .q-link:focus-visible { outline: 3px solid rgba(75, 47, 94, 0.28); border-radius: 4px; }
+
+.q-list { margin: 0 0 22px; padding: 0; list-style: none; border-top: 1px solid var(--q-line); }
+.q-list li { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--q-line); font-size: 0.95rem; }
+.q-list dt, .q-list .k { color: var(--q-muted); }
+.q-list .v { font-weight: 600; text-align: left; overflow-wrap: anywhere; }
+.q-stack { display: grid; gap: 10px; }
+
+@media (max-width: 420px) {
+  .q-brandbar { padding: 18px 20px 16px; }
+  .q-body { padding: 22px 20px 24px; }
+}
+@media (prefers-reduced-motion: reduce) { .q-root * { transition: none !important; animation: none !important; } }

@@ -1,0 +1,67 @@
+/* شارات الحالات وألوان المبالغ المشتركة لكل صفحات الأدمن */
+html{--st-green:#136c34;--st-green-bg:#e1f3e8;--st-red:#b42318;--st-red-bg:#fde7e4;--st-amber:#8f4f00;--st-amber-bg:#fcefd0;--st-blue:#1d4fa8;--st-blue-bg:#e2ecfa;--st-gray:#4d5663;--st-gray-bg:#e8ecf1}
+html[data-theme="dark"]{--st-green:#4ade80;--st-green-bg:#12301f;--st-red:#ff8f86;--st-red-bg:#3d1a18;--st-amber:#fbbf24;--st-amber-bg:#38290a;--st-blue:#86b8ff;--st-blue-bg:#15294d;--st-gray:#aab3be;--st-gray-bg:#222831}
+.st-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;line-height:1.5;white-space:nowrap;color:var(--st-gray);background:var(--st-gray-bg);transition:background .2s ease-out,color .2s ease-out}
+.st-pill[data-tone="green"]{color:var(--st-green);background:var(--st-green-bg)}
+.st-pill[data-tone="red"]{color:var(--st-red);background:var(--st-red-bg)}
+.st-pill[data-tone="amber"]{color:var(--st-amber);background:var(--st-amber-bg)}
+.st-pill[data-tone="blue"]{color:var(--st-blue);background:var(--st-blue-bg)}
+.st-amt{font-variant-numeric:tabular-nums;font-weight:800}
+.st-amt[data-kind="total"]{color:var(--st-blue)}
+.st-amt[data-kind="paid"]{color:var(--st-green)}
+.st-amt[data-kind="rest"]{color:var(--st-red)}
+.qp-badge.rp-tone[data-tone="green"]{color:var(--st-green);background:var(--st-green-bg)}
+.qp-badge.rp-tone[data-tone="red"]{color:var(--st-red);background:var(--st-red-bg)}
+.qp-badge.rp-tone[data-tone="amber"]{color:var(--st-amber);background:var(--st-amber-bg)}
+.qp-badge.rp-tone[data-tone="blue"]{color:var(--st-blue);background:var(--st-blue-bg)}
+.qp-badge.rp-tone[data-tone="gray"]{color:var(--st-gray);background:var(--st-gray-bg)}
+/* ===== الديون: ألوان دلالية تعمل في الوضعين ===== */
+html{--st-btn:#1d4fa8}
+html[data-theme="dark"]{--st-btn:#2f6fe0}
+html .qd-page .qd-badge{background:var(--st-gray-bg);color:var(--st-gray);border-color:transparent;font-weight:700}
+html .qd-page .qd-badge[data-tone="paid"],html .qd-page .qd-badge[data-tone="receivable"]{color:var(--st-green);background:var(--st-green-bg)}
+html .qd-page .qd-badge[data-tone="partial"],html .qd-page .qd-badge[data-tone="payable"]{color:var(--st-amber);background:var(--st-amber-bg)}
+html .qd-page .qd-badge[data-tone="late"]{color:var(--st-red);background:var(--st-red-bg)}
+html .qd-page .qd-badge[data-tone="unpaid"],html .qd-page .qd-badge[data-tone="open"]{color:var(--st-blue);background:var(--st-blue-bg)}
+html .qd-page .qd-badge[data-tone="cancelled"]{color:var(--st-gray);background:var(--st-gray-bg);opacity:.85}
+html .qd-page .qd-stat[data-tone="danger"] .qd-stat-value{color:var(--st-red)}
+html .qd-page .qd-msg[data-tone="err"]{color:var(--st-red);background:var(--st-red-bg);border-color:var(--st-red)}
+html .qd-page .qd-msg[data-tone="ok"]{color:var(--st-green);background:var(--st-green-bg);border-color:var(--st-green)}
+html .qd-page .qd-btn-danger{color:var(--st-red);border-color:var(--st-red)}
+html .qd-page .qd-btn-primary,html .qd-page .qa-btn{background:var(--st-btn);color:#fff;border-color:transparent;font-weight:700;transition:transform .15s ease-out,filter .15s ease-out,box-shadow .15s ease-out}
+html .qd-page .qd-btn-primary:hover,html .qd-page .qa-btn:hover{background:var(--st-btn);color:#fff;border-color:transparent;filter:brightness(1.12)}
+html .qd-page .qd-btn-primary:active,html .qd-page .qa-btn:active{transform:scale(.97)}
+html .qd-page .qd-stat-label,html .qd-page .qd-stat-hint,html .qd-page .qd-sub,html .qd-page .qd-count,html .qd-page .qd-kv>span:first-child{opacity:.88}
+html .qd-page .qd-cell small{opacity:.85}
+/* ===== إدارة الطلبات: حالات موحّدة وأزرار بلا بنفسجي ===== */
+html .ao-badge{background:var(--st-gray-bg);color:var(--st-gray);font-weight:700}
+html .ao-st-new,html .ao-st-confirmed,html .ao-st-ready,html .ao-st-out_for_delivery{background:var(--st-blue-bg);color:var(--st-blue)}
+html .ao-st-pending_confirmation,html .ao-st-preparing{background:var(--st-amber-bg);color:var(--st-amber)}
+html .ao-st-delivered,html .ao-pay-paid{background:var(--st-green-bg);color:var(--st-green)}
+html .ao-st-cancelled,html .ao-pay-failed{background:var(--st-red-bg);color:var(--st-red)}
+html .ao-st-returned,html .ao-pay-unpaid,html .ao-pay-refunded{background:var(--st-gray-bg);color:var(--st-gray)}
+html .ao-pay-partial{background:var(--st-amber-bg);color:var(--st-amber)}
+html .ao-btn{background:var(--st-btn);border-color:transparent;color:#fff;font-weight:700;transition:transform .15s ease-out,filter .15s ease-out}
+html .ao-btn:hover{background:var(--st-btn);filter:brightness(1.12)}
+html .ao-btn:active{transform:scale(.97)}
+html .ao-btn.ao-btn-line{background:transparent;color:var(--st-btn);border-color:var(--st-btn)}
+html .ao-btn.ao-btn-line:hover{background:var(--st-blue-bg);filter:none}
+html .ao-tab.on{background:var(--st-btn);border-color:var(--st-btn);color:#fff}
+html .ao-err{color:var(--st-red)}
+html .ao-ok{color:var(--st-green)}
+html .ao-muted{opacity:.9}
+/* ===== بطاقات الملخص: لون على الحد فقط ===== */
+html .qd-page .qd-sum>.qd-stat:not([data-active="true"]){transition:border-color .18s ease-out,box-shadow .18s ease-out}
+html .qd-page .qd-sum>.qd-stat:not([data-active="true"]):nth-child(1){--qs-c:var(--st-green)}
+html .qd-page .qd-sum>.qd-stat:not([data-active="true"]):nth-child(2){--qs-c:var(--st-amber)}
+html .qd-page .qd-sum>.qd-stat:not([data-active="true"]):nth-child(3){--qs-c:var(--st-blue)}
+html .qd-page .qd-sum>.qd-stat:not([data-active="true"]):nth-child(4){--qs-c:var(--st-red)}
+html .qd-page .qd-sum:has(>.qd-stat:nth-child(5))>.qd-stat:not([data-active="true"]):nth-child(1){--qs-c:var(--st-blue)}
+html .qd-page .qd-sum:has(>.qd-stat:nth-child(5))>.qd-stat:not([data-active="true"]):nth-child(2){--qs-c:var(--st-green)}
+html .qd-page .qd-sum:has(>.qd-stat:nth-child(5))>.qd-stat:not([data-active="true"]):nth-child(3){--qs-c:var(--st-amber)}
+html .qd-page .qd-sum:has(>.qd-stat:nth-child(5))>.qd-stat:not([data-active="true"]):nth-child(4){--qs-c:var(--st-blue)}
+html .qd-page .qd-sum:has(>.qd-stat:nth-child(5))>.qd-stat:not([data-active="true"]):nth-child(5){--qs-c:var(--st-red)}
+html .qd-page .qd-sum>.qd-stat[style*="--qs-c"],html .qd-page .qd-sum>.qd-stat:not([data-active="true"]){border-color:color-mix(in srgb,var(--qs-c,var(--qd-line)) 60%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--qs-c,transparent) 30%,transparent)}
+html .qd-page .qd-sum>.qd-stat[data-tone="danger"]{--qs-c:var(--st-red)}
+
+

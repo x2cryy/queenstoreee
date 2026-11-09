@@ -1,0 +1,40 @@
+.qm-rate{display:inline-flex;gap:8px;align-items:center;color:#b8975a;font-size:14px;text-decoration:none;margin:4px 0;cursor:pointer}
+.qm-rate span{color:#6b645a;font-size:13px}
+.qm-tabs{max-width:1200px;margin:32px auto 0;padding:0 16px}
+.qm-tablist{display:flex;gap:4px;border-bottom:1px solid #e7dfd0;overflow-x:auto}
+.qm-tab{background:none;border:0;padding:12px 18px;font:inherit;font-weight:600;color:#6b645a;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.qm-tab.on{color:#14120f;border-bottom-color:#b8975a}
+.qm-tabpanel{padding:20px 4px;line-height:1.9;color:#14120f}
+.qm-desc{white-space:pre-wrap;margin:0}
+.qm-specs{margin:0;display:grid}
+.qm-specs div{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid #efe8da}
+.qm-specs dt{width:140px;flex:none;color:#6b645a}
+.qm-specs dd{margin:0;font-weight:600}
+.qm-related{max-width:1200px;margin:36px auto 0;padding:0 16px}
+.qm-related h2{font-size:20px;margin:0 0 14px}
+.qm-rel-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media(min-width:768px){.qm-rel-grid{grid-template-columns:repeat(4,1fr);gap:16px}}
+.qm-sticky,.qm-sticky-spacer{display:none}
+@media(min-width:901px){.qm-info{position:sticky;top:90px;align-self:start}}
+@media(max-width:900px){
+.qm-sticky{display:flex;position:fixed;inset-inline:0;bottom:0;z-index:50;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:#14120f;color:#f5efe3;box-shadow:0 -4px 16px rgba(0,0,0,.25)}
+.qm-sticky strong{font-size:18px;color:#b8975a}
+.qm-sticky .qm-btn{flex:1;max-width:240px}
+.qm-sticky-spacer{display:block;height:76px}}
+.qm-cats-page{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media(min-width:768px){.qm-cats-page{grid-template-columns:repeat(4,1fr);gap:16px}}
+.qm-cat-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:22px 12px;border:1px solid #e7dfd0;border-radius:14px;background:#fffaf0;color:#14120f;text-decoration:none;font-weight:700;text-align:center;transition:.2s}
+.qm-cat-card:hover{border-color:#b8975a;transform:translateY(-2px)}
+.qm-cat-ico{width:52px;height:52px;border-radius:50%;background:#14120f;color:#b8975a;display:grid;place-items:center;font-size:22px}
+
+/* ===== home: trust bar + deals ===== */
+.qx-trust{background:#fff;border-block:1px solid var(--line)}
+.qx-trust-in{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding-block:16px}
+@media (min-width:900px){.qx-trust-in{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.qx-trust-i{display:flex;align-items:center;gap:10px}
+.qx-trust-dot{color:var(--gold);font-size:14px}
+.qx-trust-i b{display:block;font-size:14px;color:var(--ink)}
+.qx-trust-i small{display:block;font-size:12px;color:var(--brown)}
+.qx-count{display:flex;align-items:center;gap:4px;color:var(--ink);font-weight:700}
+.qx-count span{background:var(--ink);color:var(--gold);min-width:34px;padding:6px 4px;border-radius:8px;text-align:center;font-size:15px;font-variant-numeric:tabular-nums}
+.qx-deals .qm-sec-h{align-items:center}

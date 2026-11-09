@@ -1,0 +1,32 @@
+import type { PermissionKey } from "../../../lib/auth/permissions";
+
+export type NavItem = {
+  href: string;
+  label: string;
+  icon: string;
+  perms?: PermissionKey[]; // visible if the admin holds ANY of these
+  ownerOnly?: boolean;
+};
+
+export const NAV_ITEMS: NavItem[] = [
+  { href: "/admin", label: "الرئيسية", icon: "home", perms: ["dashboard"] },
+  { href: "/admin/products", label: "المنتجات", icon: "package", perms: ["products"] },
+  { href: "/admin/inventory", label: "المخزون", icon: "boxes", perms: ["inventory"] },
+  { href: "/admin/orders", label: "الطلبات", icon: "receipt", perms: ["orders"] },
+  { href: "/admin/payments", label: "تحويلات Qi Card", icon: "wallet", perms: ["orders"] },
+  { href: "/admin/debts", label: "الديون والأقساط", icon: "wallet", perms: ["store_debts", "personal_debts", "installments"] },
+  { href: "/admin/chats", label: "المحادثات", icon: "chat", perms: ["chats"] },
+  { href: "/admin/customers", label: "الزبائن", icon: "users", perms: ["customers"] },
+  { href: "/admin/marketing", label: "التسويق والعروض", icon: "megaphone", perms: ["marketing"] },
+  { href: "/admin/content", label: "المحتوى والمظهر", icon: "palette", perms: ["content"] },
+  { href: "/admin/reports", label: "التقارير", icon: "chart", perms: ["reports"] },
+  { href: "/admin/settings", label: "الإعدادات", icon: "settings", perms: ["settings"] },
+  { href: "/admin/staff", label: "المديرون والصلاحيات", icon: "shield", ownerOnly: true },
+  { href: "/admin/activity", label: "سجل النشاطات", icon: "history", perms: ["activity_logs"] },
+];
+
+export function canSee(item: NavItem, perms: PermissionKey[], isOwner: boolean) {
+  if (isOwner) return true;
+  if (item.ownerOnly) return false;
+  return (item.perms ?? []).some((p) => perms.includes(p));
+}

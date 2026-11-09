@@ -1,0 +1,233 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { Phone } from "lucide-react";
+import { requireAnyPermission } from "../../../../lib/admin/access";
+import { createClient } from "../../../../lib/supabase/server";
+import { fmtIQD, fmtNum, fmtDate } from "../../../../lib/admin/fmt";
+import { PageHead, KpiGrid, Panel, Badge, Empty } from "../../_components/ui";
+import { CustomerTabs } from "./CustomerTabs";
+
+type O = { id: string; order_number: string | null; total: number; status: string; payment_status: string | null; payment_method: string | null; created_at: string };
+type D = { id: string; direction: string | null; reason: string | null; original_amount: number; paid_amount: number; remaining_amount: number; due_date: string | null; status: string | null };
+type I = { id: string; title: string | null; total_amount: number; paid_amount: number; remaining_amount: number; status: string | null; start_date: string | null };
+type Item = { order_id: string; product_name: string | null; variant_label: string | null; quantity: number; line_total: number };
+type Fav = { id: string; product_id: string; created_at: string };
+type Log = { id: number; action: string; entity_type: string | null; created_at: string };
+const live = (s: string) => !s.toLowerCase().includes("cancel");
+
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  await requireAnyPermission(["customers"]);
+  const { id } = await params;
+  const sb = await createClient();
+  const [cr, or, dr, ir] = await Promise.all([
+    sb.from("customers").select("id,user_id,full_name,phone,area,address,created_at").eq("id", id).maybeSingle(),
+    sb.from("orders").select("id,order_number,total,status,payment_status,payment_method,created_at").eq("customer_id", id).order("created_at", { ascending: false }).limit(100),
+    sb.from("store_debts").select("id,direction,reason,original_amount,paid_amount,remaining_amount,due_date,status").eq("customer_id", id).order("created_at", { ascending: false }).limit(100),
+    sb.from("installments").select("id,title,total_amount,paid_amount,remaining_amount,status,start_date").eq("customer_id", id).order("created_at", { ascending: false }).limit(100),
+  ]);
+  if (cr.error || !cr.data) notFound();
+  const c = cr.data;
+  const orders = (or.data ?? []) as O[];
+  const debts = (dr.data ?? []) as D[];
+  const insts = (ir.data ?? []) as I[];
+
+  const logIds = [id, ...orders.slice(0, 40).map((o) => o.id), ...debts.slice(0, 20).map((d) => d.id), ...insts.slice(0, 20).map((i) => i.id)];
+  const [itr, fr, lr] = await Promise.all([
+    orders.length
+      ? sb.from("order_items").select("order_id,product_name,variant_label,quantity,line_total").in("order_id", orders.map((o) => o.id))
+      : Promise.resolve({ data: [] as Item[], error: null }),
+    c.user_id
+      ? sb.from("favorites").select("id,product_id,created_at").eq("user_id", c.user_id).order("created_at", { ascending: false }).limit(100)
+      : Promise.resolve({ data: [] as Fav[], error: null }),
+    sb.from("activity_logs").select("id,action,entity_type,created_at").in("entity_id", logIds).order("created_at", { ascending: false }).limit(100),
+  ]);
+  const items = (itr.data ?? []) as Item[];
+  const favs = (fr.data ?? []) as Fav[];
+  const logs = (lr.data ?? []) as Log[];
+
+  const favIds = favs.map((f) => f.product_id);
+  const prodR = favIds.length ? await sb.from("products").select("*").in("id", favIds) : { data: [] as Record<string, unknown>[] };
+  const prodName = new Map<string, string>();
+  for (const p of (prodR.data ?? []) as Record<string, unknown>[]) {
+    prodName.set(String(p.id), String(p.name ?? p.title ?? p.name_ar ?? "منتج"));
+  }
+
+  const debtLeft = debts.reduce((x, d) => x + Number(d.remaining_amount ?? 0), 0);
+  const instLeft = insts.reduce((x, i) => x + Number(i.remaining_amount ?? 0), 0);
+  const valid = orders.filter((o) => live(o.status));
+  const validIds = new Map(valid.map((o) => [o.id, o.created_at]));
+  const spent = valid.reduce((a, o) => a + Number(o.total ?? 0), 0);
+  const avg = valid.length ? Math.round(spent / valid.length) : 0;
+
+  const prod = new Map<string, { name: string; qty: number; sum: number; last: string }>();
+  for (const it of items) {
+    const at = validIds.get(it.order_id);
+    if (!at) continue;
+    const key = (it.product_name ?? "منتج") + (it.variant_label ? " - " + it.variant_label : "");
+    const p = prod.get(key) ?? { name: key, qty: 0, sum: 0, last: at };
+    p.qty += Number(it.quantity ?? 0);
+    p.sum += Number(it.line_total ?? 0);
+    if (at > p.last) p.last = at;
+    prod.set(key, p);
+  }
+  const purchases = [...prod.values()].sort((a, b) => b.sum - a.sum);
+
+  const tabs = [
+    {
+      key: "orders", label: "الطلبات", count: orders.length,
+      content: orders.length === 0 ? <Empty>لا توجد طلبات لهذا الزبون.</Empty> : (
+        <Panel title="طلبات الزبون">
+          <table className="ds-table">
+            <thead><tr><th>رقم الطلب</th><th>التاريخ</th><th>المبلغ</th><th>الحالة</th><th>الدفع</th></tr></thead>
+            <tbody>
+              {orders.slice(0, 50).map((o) => (
+                <tr key={o.id}>
+                  <td data-label="رقم الطلب">{o.order_number ?? "-"}</td>
+                  <td data-label="التاريخ">{fmtDate(o.created_at)}</td>
+                  <td data-label="المبلغ">{fmtIQD(o.total)}</td>
+                  <td data-label="الحالة"><Badge>{o.status}</Badge></td>
+                  <td data-label="الدفع"><Badge>{o.payment_status ?? "-"}</Badge></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Panel>
+      ),
+    },
+    {
+      key: "purchases", label: "المشتريات", count: purchases.length,
+      content: purchases.length === 0 ? <Empty>لا توجد مشتريات.</Empty> : (
+        <Panel title="المنتجات التي اشتراها">
+          <table className="ds-table">
+            <thead><tr><th>المنتج</th><th>الكمية</th><th>المبلغ</th><th>آخر شراء</th></tr></thead>
+            <tbody>
+              {purchases.map((p) => (
+                <tr key={p.name}>
+                  <td data-label="المنتج">{p.name}</td>
+                  <td data-label="الكمية">{fmtNum(p.qty)}</td>
+                  <td data-label="المبلغ">{fmtIQD(p.sum)}</td>
+                  <td data-label="آخر شراء">{fmtDate(p.last)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Panel>
+      ),
+    },
+    {
+      key: "debts", label: "الديون", count: debts.length,
+      content: debts.length === 0 ? <Empty>لا توجد ديون لهذا الزبون.</Empty> : (
+        <Panel title="ديون الزبون">
+          <table className="ds-table">
+            <thead><tr><th>السبب</th><th>الأصلي</th><th>المدفوع</th><th>المتبقي</th><th>الاستحقاق</th><th>الحالة</th></tr></thead>
+            <tbody>
+              {debts.map((d) => (
+                <tr key={d.id}>
+                  <td data-label="السبب">{d.reason ?? "-"}</td>
+                  <td data-label="الأصلي">{fmtIQD(d.original_amount)}</td>
+                  <td data-label="المدفوع">{fmtIQD(d.paid_amount)}</td>
+                  <td data-label="المتبقي">{fmtIQD(d.remaining_amount)}</td>
+                  <td data-label="الاستحقاق">{d.due_date ? fmtDate(d.due_date) : "-"}</td>
+                  <td data-label="الحالة"><Badge>{d.status ?? "-"}</Badge></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Panel>
+      ),
+    },
+    {
+      key: "installments", label: "الأقساط", count: insts.length,
+      content: insts.length === 0 ? <Empty>لا توجد أقساط لهذا الزبون.</Empty> : (
+        <Panel title="أقساط الزبون">
+          <table className="ds-table">
+            <thead><tr><th>العنوان</th><th>الإجمالي</th><th>المدفوع</th><th>المتبقي</th><th>الحالة</th></tr></thead>
+            <tbody>
+              {insts.map((i) => (
+                <tr key={i.id}>
+                  <td data-label="العنوان">{i.title ?? "-"}</td>
+                  <td data-label="الإجمالي">{fmtIQD(i.total_amount)}</td>
+                  <td data-label="المدفوع">{fmtIQD(i.paid_amount)}</td>
+                  <td data-label="المتبقي">{fmtIQD(i.remaining_amount)}</td>
+                  <td data-label="الحالة"><Badge>{i.status ?? "-"}</Badge></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Panel>
+      ),
+    },
+    {
+      key: "favorites", label: "المفضلة", count: favs.length,
+      content: !c.user_id ? <Empty>هذا الزبون ليس له حساب في المتجر.</Empty> : favs.length === 0 ? <Empty>لا توجد منتجات مفضلة.</Empty> : (
+        <Panel title="المنتجات المفضلة">
+          <table className="ds-table">
+            <thead><tr><th>المنتج</th><th>أضافه بتاريخ</th></tr></thead>
+            <tbody>
+              {favs.map((f) => (
+                <tr key={f.id}>
+                  <td data-label="المنتج">{prodName.get(f.product_id) ?? "منتج"}</td>
+                  <td data-label="أضافه بتاريخ">{fmtDate(f.created_at)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Panel>
+      ),
+    },
+    {
+      key: "activity", label: "النشاط", count: logs.length,
+      content: lr.error ? <Empty>تعذّر تحميل سجل النشاط.</Empty> : logs.length === 0 ? <Empty>لا يوجد نشاط مسجّل.</Empty> : (
+        <Panel title="سجل النشاط">
+          <table className="ds-table">
+            <thead><tr><th>الإجراء</th><th>النوع</th><th>التاريخ</th></tr></thead>
+            <tbody>
+              {logs.map((l) => (
+                <tr key={l.id}>
+                  <td data-label="الإجراء">{l.action}</td>
+                  <td data-label="النوع">{l.entity_type ?? "-"}</td>
+                  <td data-label="التاريخ">{fmtDate(l.created_at)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Panel>
+      ),
+    },
+  ];
+
+  return (
+    <section>
+      <PageHead
+        title={c.full_name ?? "زبون بدون اسم"}
+        desc={`زبون منذ ${fmtDate(c.created_at)}`}
+        actions={
+          <span style={{ display: "inline-flex", gap: 8 }}>
+            {c.phone ? <a className="ds-btn" href={`tel:${c.phone}`}><Phone size={16} /> اتصال</a> : null}
+            <Link className="ds-btn" href="/admin/customers">كل الزبائن</Link>
+          </span>
+        }
+      />
+      <KpiGrid
+        items={[
+          { label: "عدد الطلبات", value: fmtNum(valid.length), hint: "غير الملغاة" },
+          { label: "إجمالي المشتريات", value: fmtIQD(spent) },
+          { label: "متوسط الطلب", value: fmtIQD(avg) },
+          { label: "آخر طلب", value: valid[0] ? fmtDate(valid[0].created_at) : "-" },
+          { label: "متبقي الديون", value: fmtIQD(debtLeft), hint: fmtNum(debts.length) + " دين" },
+          { label: "متبقي الأقساط", value: fmtIQD(instLeft), hint: fmtNum(insts.length) + " قسط" },
+        ]}
+      />
+      <div className="ds-split">
+        <Panel title="بيانات الزبون">
+          <div style={{ display: "grid", gap: 10 }}>
+            <div><span className="ds-kpi-label">الهاتف: </span><span dir="ltr">{c.phone ?? "-"}</span></div>
+            <div><span className="ds-kpi-label">المنطقة: </span>{c.area ?? "-"}</div>
+            <div><span className="ds-kpi-label">العنوان: </span>{c.address ?? "-"}</div>
+          </div>
+        </Panel>
+      </div>
+      <CustomerTabs tabs={tabs} />
+    </section>
+  );
+}

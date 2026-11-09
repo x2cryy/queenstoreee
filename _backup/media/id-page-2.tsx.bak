@@ -1,0 +1,125 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { requireAnyPermission } from "../../../../lib/admin/access";
+import { createClient } from "../../../../lib/supabase/server";
+import { fmtIQD, fmtNum } from "../../../../lib/admin/fmt";
+import { PageHead, Panel, Badge, Empty } from "../../_components/ui";
+import { ProductForm, type ProductInit } from "../_components/ProductForm";
+import { ImageUploadForm, VariantForm, type VariantInit } from "../_components/MediaForms";
+import { setPrimaryImage, deleteImage, toggleVariant } from "../media-actions";
+
+type Img = { id: string; storage_path: string; is_primary: boolean };
+
+export default async function Page({
+  params, searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ v?: string }>;
+}) {
+  await requireAnyPermission(["products"]);
+  const { id } = await params;
+  const sp = await searchParams;
+  const sb = await createClient();
+  const [pr, cr, cat, im, vr] = await Promise.all([
+    sb.from("products")
+      .select("id,name,category_id,brand,description,barcode,price,quantity,low_stock_threshold,status,is_featured,is_new")
+      .eq("id", id)
+      .maybeSingle(),
+    sb.from("product_costs").select("cost_price").eq("product_id", id).maybeSingle(),
+    sb.from("categories").select("id,name").order("sort_order"),
+    sb.from("product_images").select("id,storage_path,is_primary").eq("product_id", id).order("sort_order"),
+    sb.from("product_variants")
+      .select("id,sku,barcode,price_adjustment,quantity,track_quantity,is_active")
+      .eq("product_id", id)
+      .order("created_at"),
+  ]);
+  if (pr.error || !pr.data) notFound();
+
+  const imgs = (im.data ?? []) as Img[];
+  const vars = (vr.data ?? []) as VariantInit[];
+  const editing = sp.v ? vars.find((x) => x.id === sp.v) : undefined;
+  const urlOf = (p: string) => sb.storage.from("product-images").getPublicUrl(p).data.publicUrl;
+
+  return (
+    <section>
+      <PageHead
+        title="تعديل المنتج"
+        desc={pr.data.name}
+        actions={<Link className="ds-btn" href="/admin/products">رجوع للمنتجات</Link>}
+      />
+      <Panel title="بيانات المنتج">
+        <ProductForm categories={cat.data ?? []} product={pr.data as ProductInit} cost={cr.data?.cost_price ?? null} />
+      </Panel>
+
+      <Panel title="صور المنتج">
+        {im.error ? (
+          <Empty>تعذّر تحميل الصور.</Empty>
+        ) : imgs.length === 0 ? (
+          <Empty>لا توجد صور. الصورة الأولى التي ترفعها تصبح الرئيسية.</Empty>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))", gap: 12, marginBottom: 18 }}>
+            {imgs.map((m) => (
+              <div key={m.id} style={{ border: "1px solid #ECE6DA", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
+                <img src={urlOf(m.storage_path)} alt="" style={{ width: "100%", height: 130, objectFit: "cover", display: "block" }} />
+                <div style={{ padding: 8, display: "grid", gap: 6 }}>
+                  {m.is_primary ? (
+                    <Badge tone="good">الرئيسية</Badge>
+                  ) : (
+                    <form action={setPrimaryImage}>
+                      <input type="hidden" name="product_id" value={id} />
+                      <input type="hidden" name="id" value={m.id} />
+                      <button className="ds-btn" style={{ width: "100%", height: 34 }} type="submit">جعلها رئيسية</button>
+                    </form>
+                  )}
+                  <form action={deleteImage}>
+                    <input type="hidden" name="product_id" value={id} />
+                    <input type="hidden" name="id" value={m.id} />
+                    <button className="ds-btn" style={{ width: "100%", height: 34, color: "#B91C1C" }} type="submit">حذف</button>
+                  </form>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <ImageUploadForm productId={id} />
+      </Panel>
+
+      <Panel title="المتغيرات (اللون / المقاس)">
+        {vr.error ? (
+          <Empty>تعذّر تحميل المتغيرات.</Empty>
+        ) : vars.length === 0 ? (
+          <Empty>لا توجد متغيرات. أضف متغيراً إذا كان للمنتج ألوان أو مقاسات بكميات مختلفة.</Empty>
+        ) : (
+          <table className="ds-table" style={{ marginBottom: 18 }}>
+            <thead><tr><th>المتغير</th><th>السعر النهائي</th><th>الكمية</th><th>الحالة</th><th></th></tr></thead>
+            <tbody>
+              {vars.map((x) => (
+                <tr key={x.id}>
+                  <td data-label="المتغير"><strong>{x.sku ?? "-"}</strong>{x.barcode ? <div className="ds-kpi-hint" dir="ltr">{x.barcode}</div> : null}</td>
+                  <td data-label="السعر النهائي">{fmtIQD(pr.data.price + x.price_adjustment)}</td>
+                  <td data-label="الكمية">{x.track_quantity ? fmtNum(x.quantity) : "من رصيد المنتج"}</td>
+                  <td data-label="الحالة">{x.is_active ? <Badge tone="good">فعّال</Badge> : <Badge>متوقف</Badge>}</td>
+                  <td>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      <Link className="ds-btn" href={`/admin/products/${id}?v=${x.id}#variant`}>تعديل</Link>
+                      <form action={toggleVariant}>
+                        <input type="hidden" name="product_id" value={id} />
+                        <input type="hidden" name="id" value={x.id} />
+                        <input type="hidden" name="next" value={x.is_active ? "0" : "1"} />
+                        <button className="ds-btn" type="submit">{x.is_active ? "إيقاف" : "تفعيل"}</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        <div id="variant">
+          <h3 className="ds-panel-title" style={{ marginBottom: 12 }}>{editing ? "تعديل المتغير" : "إضافة متغير"}</h3>
+          <VariantForm key={editing?.id ?? "new"} productId={id} variant={editing} />
+        </div>
+      </Panel>
+    </section>
+  );
+}

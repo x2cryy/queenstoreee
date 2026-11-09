@@ -1,0 +1,73 @@
+import { requireAnyPermission } from "../../../../lib/admin/access";
+import { listInstallments } from "../../../../lib/finance/queries";
+import { createClient } from "../../../../lib/supabase/server";
+import { iqd } from "../../../../lib/finance/types";
+import { CreatePlanForm, PayInstForm, RescheduleForm, type Sch } from "./Forms";
+
+type Row = Sch & { installment_id: string };
+const PLAN: Record<string, string> = { active: "نشطة", completed: "مكتملة", cancelled: "ملغية" };
+const ST: Record<string, string> = { upcoming: "قادم", due: "مستحق", partial: "مدفوع جزئياً", paid: "مدفوع بالكامل", late: "متأخر" };
+const FREQ: Record<string, string> = { weekly: "أسبوعي", biweekly: "كل أسبوعين", monthly: "شهري" };
+
+export default async function Page() {
+  await requireAnyPermission(["installments"]);
+  const { rows, error } = await listInstallments();
+  const sb = await createClient();
+  const { data: customers } = await sb.from("customers").select("id, full_name, phone").order("full_name");
+  const ids = rows.map((r) => r.id);
+  const { data: sch } = ids.length
+    ? await sb.from("installment_schedule").select("id, installment_id, seq, due_date, amount_due, amount_paid").in("installment_id", ids).order("seq")
+    : { data: [] as Row[] };
+  const all = (sch ?? []) as Row[];
+  const today = new Date().toISOString().slice(0, 10);
+  const st = (r: Row) =>
+    Number(r.amount_paid) >= Number(r.amount_due) ? "paid"
+    : r.due_date < today ? "late"
+    : r.due_date === today ? "due"
+    : Number(r.amount_paid) > 0 ? "partial" : "upcoming";
+  const lateRows = all.filter((r) => st(r) === "late");
+  const active = rows.filter((r) => r.status === "active");
+  return (
+    <section>
+      <h1 className="qs-h1">الأقساط</h1>
+      <p className="qs-muted">خطط أقساط الزبائن، منفصلة عن الديون الشخصية.</p>
+      {error && <div className="qa-note qa-err">تعذر تحميل البيانات</div>}
+      <div className="qa-card">
+        <div className="qa-row"><span>خطط نشطة</span><b>{active.length}</b></div>
+        <div className="qa-row"><span>المتبقي على الخطط النشطة</span><b>{iqd(active.reduce((a, r) => a + Number(r.remaining_amount), 0))}</b></div>
+        <div className="qa-row"><span>أقساط متأخرة ({lateRows.length})</span><b>{iqd(lateRows.reduce((a, r) => a + Number(r.amount_due) - Number(r.amount_paid), 0))}</b></div>
+      </div>
+      <CreatePlanForm customers={customers ?? []} />
+      {rows.length === 0 && <div className="qa-note">لا توجد خطط أقساط.</div>}
+      {rows.map((p) => {
+        const mine = all.filter((r) => r.installment_id === p.id);
+        return (
+          <div className="qa-card" key={p.id}>
+            <div className="qa-row">
+              <div>
+                <b>{p.title}</b>
+                <div className="qs-muted">{p.party_name} · {FREQ[p.frequency] ?? p.frequency} · {p.installments_count} قسط</div>
+              </div>
+              <span className="qa-badge">{PLAN[p.status] ?? p.status}</span>
+            </div>
+            <div className="qa-row"><span>الإجمالي</span><span>{iqd(p.total_amount)}</span></div>
+            <div className="qa-row"><span>الدفعة المقدمة</span><span>{iqd(p.down_payment)}</span></div>
+            <div className="qa-row"><span>المدفوع</span><span>{iqd(p.paid_amount)}</span></div>
+            <div className="qa-row"><span>المتبقي</span><b>{iqd(p.remaining_amount)}</b></div>
+            <details className="qa-details">
+              <summary>جدول الاستحقاق</summary>
+              {mine.map((r) => (
+                <div className="qa-row" key={r.id}>
+                  <span>قسط {r.seq} · {r.due_date}</span>
+                  <span>{iqd(r.amount_paid)} / {iqd(r.amount_due)} · <span className="qa-badge">{ST[st(r)]}</span></span>
+                </div>
+              ))}
+            </details>
+            {p.status === "active" && <PayInstForm planId={p.id} rows={mine} />}
+            {p.status === "active" && <RescheduleForm rows={mine} />}
+          </div>
+        );
+      })}
+    </section>
+  );
+}
